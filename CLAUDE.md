@@ -4,7 +4,7 @@ This file is my standing brief. It is loaded into context every session in this 
 Read it before doing anything. If something here conflicts with what Jack says in chat,
 Jack wins — then update this file so it stays true.
 
-Last updated: 2026-09-11 (Stage 2 complete: globe polish — see §10).
+Last updated: 2026-09-11 (Stage 3 complete: orbit pipeline scheduled — see §10).
 
 Visual calibration notes (so I don't re-derive them): the Milky Way map is decoded to linear
 light, so `uIntensity` 0.05 ≈ a faint band and 0.3 is vivid — the UI slider (0–1) maps onto
@@ -102,7 +102,24 @@ Cloudflare Pages (static Svelte app) ──► browser ◄───────�
                                           └─ Main thread: p = p₀ + v·Δt per frame → THREE.Points + UI
 ```
 
-Until we move to the cloud, "R2" is a local `data/` output folder and the dev server reads it.
+Until we move to the cloud, "R2" is `data/orbits/latest/`, served at `/data/orbits/` by a Vite
+middleware (`web/vite.config.ts`) with production cache semantics: manifest `no-cache`,
+`gp-<version>.json` immutable. The snapshot is column-oriented JSON: 17 OMM fields verbatim
+(EPOCH as CelesTrak's ISO string — feed straight to satellite.js `json2satrec`), 8 derived
+(PERIOD_MIN, SEMI_MAJOR_AXIS_KM, APOGEE_KM, PERIGEE_KM, REGIME, EPOCH_AGE_DAYS, FLAGS, GROUPS),
+7 SATCAT (OBJECT_TYPE, OPS_STATUS_CODE, OWNER, LAUNCH_DATE, LAUNCH_SITE, DECAY_DATE, RCS).
+
+**Fetch discipline (implemented in `celestrak_client.py`, verified 2026-09-11):** gp.php sends no
+Last-Modified/ETag → purely temporal pacing: per dataset, no request < 58 min after the last
+attempt, no request < 1 h 50 after the last success (the hourly task then fetches every 2nd
+run — a locked 2-hour cadence), 403 → next try in 58 min (not an error), 5xx → all datasets
+blocked 6 h, 301/404 → ObsoleteEndpoint (exit 2). SATCAT via `satcat/jsonDir.php` hourly,
+download only when FILE_MTIME changes. Groups: active, stations, last-30-days,
+fengyun-1c-debris, iridium-33-debris, cosmos-2251-debris. **CelesTrak has no all-objects group**;
+rocket bodies + remaining debris (~16k) need Space-Track (Jack's account; ODR before public).
+`--force` bypasses gates and WILL cause 403s — never use it against the real endpoint casually.
+Windows Task Scheduler job "Atmospheric Perspective - orbit update" registered 2026-09-11,
+hourly at :17 local, tested (exit 0).
 
 ## 6. Planned repo layout
 
@@ -126,11 +143,19 @@ atmospheric-perspective/            (folder is literally "Satellite Platform" on
     ap_pipeline/textures/build_earth_textures_from_nasa.py
     ap_pipeline/sky/build_star_catalog_from_hyg.py
     ap_pipeline/sky/build_milky_way_glow_from_tycho2.py
+    ap_pipeline/orbits/             celestrak_client.py (gates + state), validate_element_sets.py (sgp4),
+                                    satcat.py, build_orbit_snapshot.py, run_orbit_update.py (hourly entry)
+    scheduling/register_windows_task.ps1   register / -Status / -Remove the hourly task
   docs/briefs/NN-<slug>.html        stage briefs
   docs/journal/                     the build journal (single HTML, grows)
   docs/plan/                        copy of the game plan
   data/raw/                         downloaded originals (git-ignored): NASA 21600×10800 Blue Marble,
-                                    Black Marble 3km, cloud TIFF, hyg_v44.csv.gz, tycho2/ (20 parts)
+                                    Black Marble 3km, cloud TIFF, hyg_v44.csv.gz, tycho2/ (20 parts),
+                                    celestrak/gp/<group>/<stamp>.json + celestrak/satcat/ (7-day retention)
+  data/orbits/                      state.json (fetch memory — never delete casually), last-run.json,
+                                    latest/{manifest.json, gp-<version>.json} ← the site loads these
+  data/archive/gp|satcat/YYYY/MM/DD/  one .gz per dataset per UTC day, forever (started 2026-09-11)
+  data/logs/orbits.log
   .github/workflows/                added when we move the pipeline to Actions
 ```
 Dependency direction is strict: `ui → state → globe → astro`. Satellites go under the
@@ -247,8 +272,9 @@ All three document types (plan, briefs, journal) use one visual family so they r
 | 0 | Game plan (pre-build) | 2026-09-11 | Game Plan artifact (link in §1) | — |
 | 1 | Framework: local site, globe, night sky, first UI | 2026-09-11 | `docs/briefs/01-framework.html` · https://claude.ai/code/artifact/341aff22-9767-47b6-ba8f-4c25eda26706 | Part 1 — The Globe |
 | 2 | Globe polish: 8k textures, clouds, Sun, HYG stars, Milky Way, controls | 2026-09-11 | `docs/briefs/02-globe-polish.html` · https://claude.ai/code/artifact/5bda8a5d-9661-4d3d-9c9c-2ef8edb6196d | Part 1 — The Globe |
+| 3 | Orbit pipeline: CelesTrak fetch discipline, sgp4 validation, snapshot, archive, hourly schedule | 2026-09-11 | `docs/briefs/03-orbit-pipeline.html` · https://claude.ai/code/artifact/41f64269-6dc4-4b45-9839-fe02ce9e2b54 | pending Jack's yes (would be Part 2 — The Orbit Pipeline) |
 
-Commits: Stage 1 `7a3e84d`. Jack said "yes commit" at the end of Stage 1 → **commit at the
+Commits: Stage 1 `7a3e84d`, Stage 2 `f16d9b8`, journal `d097609`. Jack said "yes commit" at the end of Stage 1 → **commit at the
 end of every stage** (one commit per stage, message "Stage N: <name>"); still never push
 without being asked.
 

@@ -1,0 +1,389 @@
+<title>Stage 03 · Orbit Pipeline</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F4F6F9; --surface: #FFFFFF; --ink: #1A2230; --muted: #5B6677; --line: #D3DAE3;
+    --accent: #0B7580; --accent-soft: #DFEFF0; --amber: #B45A10; --amber-soft: #FBEEDD;
+    --green: #2F7D4F; --green-soft: #E3F2E8; --code-bg: #EAEFF4; --shadow: 0 1px 2px rgba(26,34,48,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+      --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+      --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+    --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+    --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Source Serif 4", Georgia, serif; font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 96px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 48px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px 16px 64px; } nav.toc { position: static !important; } }
+  header.mast { grid-column: 1 / -1; border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+  .eyebrow { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 46px; line-height: 1.02; margin: 8px 0 12px; text-wrap: balance; }
+  .lede { font-size: 19px; max-width: 66ch; margin: 0 0 20px; }
+  .telemetry { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.7; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 24px; font-variant-numeric: tabular-nums; }
+  .telemetry span { color: var(--muted); } .telemetry b { font-weight: 500; color: var(--ink); }
+  nav.toc { position: sticky; top: 24px; align-self: start; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 600; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--ink); }
+  nav.toc .toc-head { margin-bottom: 8px; }
+  article { max-width: 760px; min-width: 0; }
+  section { padding: 12px 0 28px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  section:last-of-type { border-bottom: 0; }
+  h2 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 30px; line-height: 1.1; margin: 8px 0 14px; text-wrap: balance; }
+  h3 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 20px; line-height: 1.2; margin: 26px 0 8px; text-wrap: balance; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; max-width: 70ch; } li { margin-bottom: 5px; }
+  strong { font-weight: 600; }
+  code, .mono { font-family: "IBM Plex Mono", Consolas, monospace; font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+  pre { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 14px; margin: 0 0 14px; overflow-x: auto; white-space: pre; }
+  pre code { background: none; padding: 0; font-size: inherit; } .annot { color: var(--muted); }
+  .note, .warn, .done { margin: 18px 0 20px; padding: 12px 16px 6px; max-width: 70ch; border-top: 2px solid var(--accent); background: var(--accent-soft); }
+  .warn { border-top-color: var(--amber); background: var(--amber-soft); }
+  .done { border-top-color: var(--green); background: var(--green-soft); }
+  .note .eyebrow { color: var(--accent); margin-bottom: 4px; } .warn .eyebrow { color: var(--amber); margin-bottom: 4px; } .done .eyebrow { color: var(--green); margin-bottom: 4px; }
+  .note p:last-child, .warn p:last-child, .done p:last-child { margin-bottom: 8px; }
+  .tablewrap { overflow-x: auto; margin: 6px 0 18px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.45; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 8px; border-radius: 3px; white-space: nowrap; }
+  .pill.live { background: var(--green-soft); color: var(--green); }
+  .pill.partial { background: var(--accent-soft); color: var(--accent); }
+  .pill.todo { background: var(--code-bg); color: var(--muted); }
+  .pill.risk { background: var(--amber-soft); color: var(--amber); }
+  .opt { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .opt:last-of-type { border-bottom: 1px solid var(--line); }
+  .opt .o-key { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 26px; line-height: 1; color: var(--accent); }
+  .opt h4 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-size: 19px; margin: 0 0 6px; }
+  .opt p { margin-bottom: 6px; }
+  .opt .tradeoff { font-size: 15px; color: var(--muted); }
+  figure { margin: 18px 0 22px; }
+  figure svg { max-width: 100%; height: auto; display: block; color: var(--ink); background: var(--surface); border: 1px solid var(--line); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; max-width: 70ch; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; }
+  .tree { font-size: 12.5px; }
+  .tree .d { color: var(--accent); font-weight: 500; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">Atmospheric Perspective · Stage brief 03 · 11 Sep 2026</div>
+    <h1>The orbit pipeline: fetch, validate, snapshot, archive — on a schedule</h1>
+    <p class="lede">The platform now has its data supply. Every hour a scheduled task on your PC asks the pipeline to run; the pipeline decides, dataset by dataset, whether CelesTrak's rules allow a download, fetches what it may, validates every element set with the reference SGP4 implementation, joins the satellite catalogue, writes the snapshot the site will load, and files one gzipped copy of everything per day into an archive that starts today. The first run brought in 19,248 objects.</p>
+    <div class="telemetry" aria-label="Stage numbers">
+      <div><span>OBJECTS IN SNAPSHOT </span><b>19,248</b> <span>of 19,527 fetched</span></div>
+      <div><span>SNAPSHOT </span><b>5.0 MB</b> <span>· gzipped </span><b>1.09 MB</b></div>
+      <div><span>ELEMENT-SET AGE </span><b>median 0.34 d</b> <span>· p95 2.15 d</span></div>
+      <div><span>SATCAT </span><b>70,656 rows</b> <span>· matched </span><b>100%</b></div>
+      <div><span>FIRST RUN </span><b>13.6 s</b> <span>· gated re-run </span><b>0.3 s</b></div>
+      <div><span>SCHEDULE </span><b>hourly at :17</b> <span>· fetch every 2 h</span></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow toc-head">Contents</div>
+    <ol>
+      <li><a href="#where">Where the project is</a></li>
+      <li><a href="#completed">What we just completed</a></li>
+      <li><a href="#structure">Under the hood: structure</a></li>
+      <li><a href="#discipline">Under the hood: fetch discipline</a></li>
+      <li><a href="#validation">Under the hood: validation</a></li>
+      <li><a href="#snapshot">Under the hood: snapshot and storage</a></li>
+      <li><a href="#decisions">Decisions taken</a></li>
+      <li><a href="#next">Immediate next avenues</a></li>
+      <li><a href="#risks">Open questions and risks</a></li>
+      <li><a href="#run">Running it</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section id="where">
+      <h2>Where the project is</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Component</th><th>State</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Globe · sky · time · UI</td><td><span class="pill live">Live</span></td><td>As left at Stage 2; no changes this stage.</td></tr>
+            <tr><td>Orbit fetcher (CelesTrak)</td><td><span class="pill live">New</span></td><td>Six GP groups + SATCAT, paced to the one-download-per-window rule; state survives restarts.</td></tr>
+            <tr><td>Validation</td><td><span class="pill live">New</span></td><td>Shape/range → SGP4 initialise → propagate at epoch, now, +1 day; de-duplication; stale flags.</td></tr>
+            <tr><td>Snapshot</td><td><span class="pill live">New</span></td><td><span class="mono">data/orbits/latest/</span>: versioned column-oriented file + manifest. Served at <span class="mono">/data/orbits/</span> by the dev server.</td></tr>
+            <tr><td>Archive</td><td><span class="pill live">Day 1</span></td><td>One gzipped copy per dataset per UTC day, forever. 2.8 MB so far.</td></tr>
+            <tr><td>Scheduling</td><td><span class="pill live">Registered</span></td><td>Windows Task Scheduler, hourly at :17, tested by hand. Runs while your PC is on.</td></tr>
+            <tr><td>Satellites on the globe</td><td><span class="pill todo">Not started</span></td><td>The data is ready for them; the browser doesn't read it yet.</td></tr>
+            <tr><td>Full catalogue (rocket bodies, all debris)</td><td><span class="pill risk">Decision</span></td><td>CelesTrak publishes no all-objects group; the other ~16k need Space-Track. See risks.</td></tr>
+            <tr><td>Hosting</td><td><span class="pill todo">Local only</span></td><td>Unchanged.</td></tr>
+            <tr><td>Repository</td><td><span class="pill live">4 commits</span></td><td>Stage 3 committed at the end of this stage. GitHub remote still pending your URL.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="completed">
+      <h2>What we just completed</h2>
+      <ul>
+        <li><strong>A CelesTrak client that cannot misbehave.</strong> It remembers, per dataset, when it last asked, when it last succeeded and when it may next ask; it never polls faster than hourly; it treats a 403 as information ("you're ahead of their update") rather than an error; it halts and backs off for six hours on a server error; and it fails loudly if a URL ever redirects or 404s. Six GP groups are tracked: <span class="mono">active</span> (16,564 objects), <span class="mono">stations</span>, <span class="mono">last-30-days</span>, and the Fengyun-1C, Iridium 33 and Cosmos 2251 debris clouds. SATCAT is checked through its directory listing and downloaded only when its modification time changes.</li>
+        <li><strong>Validation with the reference propagator.</strong> The <span class="mono">sgp4</span> package — the same algorithm satellite.js runs in the browser — initialises every set and propagates all of them at once at three times. On the first run: 19,527 records in, 278 cross-group duplicates resolved to the newest epoch, one decayed object rejected, 55 flagged stale, 19,248 accepted.</li>
+        <li><strong>The snapshot format the site will load.</strong> Column-oriented JSON: 17 OMM fields carried verbatim (so the browser can hand each object straight to satellite.js), 8 derived fields (period, semi-major axis, apogee, perigee, regime, epoch age, flags, groups), 7 SATCAT fields (type, status, owner, launch date and site, decay date, radar cross-section). A manifest records the version, counts, validation summary and provenance. 5.0 MB raw, 1.09 MB gzipped.</li>
+        <li><strong>Storage with the production shape.</strong> Raw responses kept 7 days; a permanent daily archive; the latest snapshot served with the exact cache semantics object storage will use later (manifest revalidated, versioned files immutable).</li>
+        <li><strong>Scheduling.</strong> A PowerShell script registers, inspects or removes the hourly task. Registered with your approval and exercised once by hand: exit 0, gates held, nothing fetched.</li>
+        <li><strong>Probing first, then building.</strong> Before writing the client we made one tiny request (the ISS by catalogue number) to see what CelesTrak actually sends back — no <span class="mono">Last-Modified</span>, no <span class="mono">ETag</span> — which changed the design from conditional requests to time-based pacing. That single request cost one window on a dataset we never use.</li>
+      </ul>
+      <div class="done">
+        <div class="eyebrow">Working principles honoured</div>
+        <p>No database, no queue, no scheduler framework: one Python entry point, one state file, one JSON manifest, and the operating system's own scheduler. The browser never talks to CelesTrak. Every source is credited in the manifest.</p>
+      </div>
+    </section>
+
+    <section id="structure">
+      <h2>Under the hood: structure</h2>
+<pre class="tree"><code><span class="d">pipeline/ap_pipeline/orbits/</span>
+├─ celestrak_client.py         <span class="annot">the well-behaved HTTP client: gates, state, raw storage</span>
+├─ validate_element_sets.py    <span class="annot">shape/range checks, SGP4 init + propagation, dedupe, flags</span>
+├─ satcat.py                   <span class="annot">SATCAT CSV → NORAD → {type, status, owner, launch, site, decay, RCS}</span>
+├─ build_orbit_snapshot.py     <span class="annot">validate + join + write gp-&lt;version&gt;.json and manifest.json</span>
+└─ run_orbit_update.py         <span class="annot">the hourly entry point: fetch → build → archive → prune → summary</span>
+<span class="d">pipeline/scheduling/</span>
+└─ register_windows_task.ps1   <span class="annot">register / -Status / -Remove the hourly task</span>
+<span class="d">web/</span>
+└─ vite.config.ts              <span class="annot">+ middleware serving data/orbits/latest at /data/orbits/</span>
+
+<span class="d">data/</span>                             <span class="annot">git-ignored; this is the storage</span>
+├─ orbits/
+│  ├─ state.json                <span class="annot">the client's memory: per-dataset attempt / success / next-allowed</span>
+│  ├─ last-run.json             <span class="annot">what the most recent run did</span>
+│  └─ latest/
+│     ├─ manifest.json          <span class="annot">version, counts, validation, sources — Cache-Control: no-cache</span>
+│     └─ gp-20260911T1910Z.json <span class="annot">the snapshot — immutable, newest 2 versions kept</span>
+├─ raw/celestrak/
+│  ├─ gp/&lt;group&gt;/&lt;UTC stamp&gt;.json   <span class="annot">every 200 response, untouched, 7-day retention</span>
+│  └─ satcat/&lt;UTC stamp&gt;.csv
+├─ archive/
+│  ├─ gp/2026/09/11/&lt;group&gt;.json.gz     <span class="annot">last state of each day, kept forever</span>
+│  └─ satcat/2026/09/11/satcat.csv.gz
+└─ logs/orbits.log              <span class="annot">every run, UTC timestamps</span></code></pre>
+      <p>Root <span class="mono">package.json</span> gained <span class="mono">npm run orbits</span> (one run), <span class="mono">orbits:status</span>, <span class="mono">orbits:rebuild</span> (snapshot from the newest raw files without fetching), and <span class="mono">orbits:schedule</span> / <span class="mono">orbits:schedule:status</span> / <span class="mono">orbits:unschedule</span>.</p>
+    </section>
+
+    <section id="discipline">
+      <h2>Under the hood: fetch discipline</h2>
+      <p>The whole client exists to satisfy one sentence of CelesTrak's policy: <em>only download data once per update</em>, where GP updates land every two hours and a second request in the same window is answered 403. Two facts from the probe shaped the design: <span class="mono">gp.php</span> sends no <span class="mono">Last-Modified</span> or <span class="mono">ETag</span>, so a request cannot be made conditional; and the SATCAT directory listing (<span class="mono">satcat/jsonDir.php</span>) does report a modification time, so SATCAT can be polled cheaply.</p>
+
+      <figure>
+        <svg viewBox="0 0 980 400" role="img" aria-label="Decision flow for one GP dataset on each hourly run: if backing off after a server error, skip; if the next-allowed time is in the future, skip; if attempted less than an hour ago, skip; if downloaded less than 1 hour 50 minutes ago, skip; otherwise request. A 200 stores the body and sets next-allowed to now plus 1h50; a 403 sets next-allowed to now plus 58 minutes; a 5xx blocks all datasets for 6 hours; a 301 or 404 raises an error for a human." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+            <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--amber)"/></marker>
+          </defs>
+
+          <text x="20" y="28" font-weight="700" font-size="13">every hourly run, for each GP dataset</text>
+
+          <!-- gates chain -->
+          <rect x="20" y="48" width="170" height="44" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="66" font-weight="700">backing off?</text>
+          <text x="30" y="82">server error &lt; 6 h ago</text>
+
+          <rect x="230" y="48" width="170" height="44" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="240" y="66" font-weight="700">next_allowed in future?</text>
+          <text x="240" y="82">set by the last 200 or 403</text>
+
+          <rect x="440" y="48" width="170" height="44" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="450" y="66" font-weight="700">asked &lt; 58 min ago?</text>
+          <text x="450" y="82">never poll faster than hourly</text>
+
+          <rect x="650" y="48" width="170" height="44" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="660" y="66" font-weight="700">got it &lt; 1 h 50 ago?</text>
+          <text x="660" y="82">one download per window</text>
+
+          <line x1="190" y1="70" x2="228" y2="70" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <line x1="400" y1="70" x2="438" y2="70" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <line x1="610" y1="70" x2="648" y2="70" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <text x="209" y="62" text-anchor="middle" font-size="11">no</text>
+          <text x="419" y="62" text-anchor="middle" font-size="11">no</text>
+          <text x="629" y="62" text-anchor="middle" font-size="11">no</text>
+
+          <!-- skip bus -->
+          <line x1="105" y1="92" x2="105" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="315" y1="92" x2="315" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="525" y1="92" x2="525" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="735" y1="92" x2="735" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="105" y1="130" x2="735" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <text x="112" y="112" font-size="11">yes</text>
+          <text x="322" y="112" font-size="11">yes</text>
+          <text x="532" y="112" font-size="11">yes</text>
+          <text x="742" y="112" font-size="11">yes</text>
+          <rect x="330" y="146" width="180" height="30" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="420" y="166" text-anchor="middle" font-weight="700">skip — no request made</text>
+          <line x1="420" y1="130" x2="420" y2="144" stroke="currentColor" stroke-width="1.2" marker-end="url(#a)"/>
+
+          <!-- request -->
+          <line x1="820" y1="70" x2="880" y2="70" style="stroke:var(--accent)" stroke-width="2" marker-end="url(#aa)"/>
+          <text x="850" y="62" text-anchor="middle" font-size="11" style="fill:var(--accent)" font-weight="700">no</text>
+          <rect x="882" y="48" width="78" height="44" fill="none" style="stroke:var(--accent)" stroke-width="2"/>
+          <text x="921" y="66" text-anchor="middle" font-weight="700" style="fill:var(--accent)">GET</text>
+          <text x="921" y="82" text-anchor="middle" font-size="11">gp.php?GROUP=…</text>
+
+          <!-- outcomes -->
+          <line x1="921" y1="92" x2="921" y2="212" stroke="currentColor" stroke-width="1.2"/>
+          <text x="20" y="212" font-weight="700" font-size="13">outcome</text>
+
+          <rect x="20" y="228" width="220" height="70" fill="none" style="stroke:var(--accent)" stroke-width="1.6"/>
+          <text x="30" y="246" font-weight="700" style="fill:var(--accent)">200 — data</text>
+          <text x="30" y="262">save body untouched to data/raw</text>
+          <text x="30" y="278">sha256 vs last → "changed?"</text>
+          <text x="30" y="294">next_allowed = now + 1 h 50</text>
+
+          <rect x="260" y="228" width="220" height="70" fill="none" style="stroke:var(--amber)" stroke-width="1.6"/>
+          <text x="270" y="246" font-weight="700" style="fill:var(--amber)">403 — window already used</text>
+          <text x="270" y="262">we asked before their update</text>
+          <text x="270" y="278">not an error; keep the old file</text>
+          <text x="270" y="294">next_allowed = now + 58 min</text>
+
+          <rect x="500" y="228" width="220" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="510" y="246" font-weight="700">5xx — server trouble</text>
+          <text x="510" y="262">stop the whole run</text>
+          <text x="510" y="278">blocked_until = now + 6 h</text>
+          <text x="510" y="294">(all datasets)</text>
+
+          <rect x="740" y="228" width="220" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="750" y="246" font-weight="700">301 / 404 — obsolete URL</text>
+          <text x="750" y="262">raise ObsoleteEndpoint</text>
+          <text x="750" y="278">exit code 2, logged ERROR</text>
+          <text x="750" y="294">a human updates the client</text>
+
+          <line x1="130" y1="212" x2="921" y2="212" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="130" y1="212" x2="130" y2="226" stroke="currentColor" stroke-width="1.2" marker-end="url(#a)"/>
+          <line x1="370" y1="212" x2="370" y2="226" stroke="currentColor" stroke-width="1.2" marker-end="url(#a)"/>
+          <line x1="610" y1="212" x2="610" y2="226" stroke="currentColor" stroke-width="1.2" marker-end="url(#a)"/>
+          <line x1="850" y1="212" x2="850" y2="226" stroke="currentColor" stroke-width="1.2" marker-end="url(#a)"/>
+
+          <text x="20" y="340" font-weight="700" font-size="13">why 1 h 50 and not 2 h</text>
+          <text x="20" y="360">The task fires at :17 each hour. A gate of exactly two hours lets the run two hours after a success arrive a few seconds early</text>
+          <text x="20" y="376">and skip, making the cadence three-hourly. 1 h 50 admits that run and still rejects the one-hour run, so the client fetches</text>
+          <text x="20" y="392">every second hour at the same minute — and because CelesTrak also updates every two hours, the phase stays locked.</text>
+        </svg>
+        <figcaption>One GP dataset, one hourly run. Four gates stand between the scheduler and a request; only a 200 with new content triggers a snapshot rebuild.</figcaption>
+      </figure>
+
+      <p><strong>Locking onto their cadence.</strong> CelesTrak updates at some fixed two-hourly phase we cannot see. Our first request in a window succeeds at some offset δ after their update. If we then request every two hours at the same minute, δ never changes and we never see a 403. If we happen to have asked just before an update (δ ≈ negative), the request gets 403, the next hourly run succeeds, and δ becomes roughly an hour — stable from then on. Expect at most one or two 403s in the pipeline's whole life, both harmless.</p>
+      <p><strong>What the state file holds.</strong> For each of the seven datasets: last attempt, last success, last HTTP status, path of the newest raw file, SHA-256 of its body (so "downloaded but identical" is detectable), next-allowed time, and a count of consecutive 403s; plus a global back-off time and the SATCAT directory's last-checked time and modification stamp. It is plain JSON in <span class="mono">data/orbits/state.json</span>; deleting it resets the discipline, which is the one way to make the client misbehave — hence the comment inside it.</p>
+    </section>
+
+    <section id="validation">
+      <h2>Under the hood: validation</h2>
+      <p>Nothing reaches the snapshot without passing three layers, each catching something the previous one cannot:</p>
+      <ol>
+        <li><strong>Shape and range.</strong> Thirteen required fields present and numeric; 0 ≤ e &lt; 1, 0° ≤ i ≤ 180°, 0 &lt; n ≤ 20 rev/day; the epoch parses. Then de-duplication: the six groups overlap (the ISS is in <span class="mono">active</span> and <span class="mono">stations</span>), and for each catalogue number the newest epoch wins — 278 removed on the first run.</li>
+        <li><strong>Initialisation.</strong> The <span class="mono">sgp4</span> package's OMM loader builds a propagator record from the exact field names CelesTrak sends. Anything it refuses is rejected with the exception's name as the reason.</li>
+        <li><strong>Propagation.</strong> All accepted records are propagated together (vectorised, milliseconds for 19k) at three moments: each set's own epoch, now, and now plus one day. SGP4's own error codes then speak: 6 means the object has decayed (rejected — one on the first run), 5 means sub-orbital, 1–4 are numerical pathologies a range check cannot see.</li>
+      </ol>
+      <p>Sets older than 14 days are kept but flagged <span class="mono">stale</span> (55 on the first run) so the site can warn; sets older than 60 days are dropped — the propagator would place them kilometres wrong and CelesTrak would not still be listing an active object that old without a reason. The validator also computes, from the elements alone, each object's period, semi-major axis, apogee and perigee altitude, and a coarse regime — LEO / MEO / GEO / HEO / HIGH — so the site's first filters need no further maths. The first snapshot: 18,422 LEO, 552 GEO, 194 MEO, 46 HEO, 34 above GEO.</p>
+      <p>The synthetic tests run before the first real fetch are in the log of this session rather than in the repo; a proper test file is a natural addition when the pipeline gets its first regression.</p>
+    </section>
+
+    <section id="snapshot">
+      <h2>Under the hood: snapshot and storage</h2>
+      <p><strong>The snapshot file</strong> is column-oriented: a <span class="mono">columns</span> block describing each of 32 fields, and a <span class="mono">data</span> block holding one array per field, all of length 19,248, sorted by catalogue number. The 17 OMM fields are carried verbatim — the epoch as CelesTrak's ISO string, the numbers as the same doubles — so the browser can rebuild the OMM record for any object and pass it to satellite.js unchanged. Alongside ride the derived orbit numbers, the flags, the groups an object appeared in, and the SATCAT metadata: type (16,564 payloads, 2,665 debris, 12 rocket bodies, 7 unknown), operational status, owner, launch date and site, decay date, radar cross-section class.</p>
+      <p><strong>The manifest</strong> is what the site reads first: the current version, the snapshot filename, its size, the counts above, the validation summary, and provenance for every input (which raw file, fetched when, SATCAT's upstream modification time). The manifest is served with <span class="mono">Cache-Control: no-cache</span> — always revalidated — and the versioned snapshot with a one-year <span class="mono">immutable</span> lifetime, because its name changes whenever its content does. The newest two versions are kept so a page that already read the manifest can still fetch its file during a rebuild. This is precisely the contract object storage will honour later; today a 40-line Vite middleware honours it on <span class="mono">localhost</span>.</p>
+      <p><strong>Storage tiers.</strong> Raw responses are the ground truth and are kept for seven days, so a bad snapshot can be rebuilt from exactly what was received. The archive keeps one gzipped copy per dataset per UTC day — overwritten within the day, final at midnight — roughly 2.8 MB a day, a gigabyte a year, and the raw material for every "how did this orbit change" feature in the plan. Nothing under <span class="mono">data/</span> is in git.</p>
+      <p><strong>Size.</strong> 5.0 MB raw, 1.09 MB gzipped, for 19,248 objects with full metadata. The browser will need only part of it per object at first; splitting the OMM columns from the metadata columns is a two-line change in the builder if the first load ever needs to be lighter.</p>
+    </section>
+
+    <section id="decisions">
+      <h2>Decisions taken this stage</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Decision</th><th>Why</th><th>Alternative not taken</th></tr></thead>
+          <tbody>
+            <tr><td>Time-based pacing, not conditional requests</td><td>gp.php sends no validators; the policy is per-window anyway.</td><td>If-Modified-Since / ETag (would have been ideal; unavailable).</td></tr>
+            <tr><td>Treat 403 as information</td><td>It means "you have the current version"; retrying would be the abuse the policy targets.</td><td>Exponential retry.</td></tr>
+            <tr><td>1 h 50 re-fetch gate with hourly runs</td><td>Locks a two-hour cadence with no 403s; two-hour gate would drift to three.</td><td>Run the task every two hours (fragile if the PC wakes late).</td></tr>
+            <tr><td>Six CelesTrak groups, no Space-Track yet</td><td>No account, no redistribution question, covers every active satellite and the big debris clouds.</td><td>Full 35k catalogue from Space-Track (see risks).</td></tr>
+            <tr><td>Validate with the <span class="mono">sgp4</span> package</td><td>Same algorithm as the browser; vectorised; its error codes are the domain's own vocabulary.</td><td>Range checks only.</td></tr>
+            <tr><td>OMM fields verbatim in the snapshot</td><td>Zero conversion risk on the way to satellite.js.</td><td>Pre-converted radians/ms (smaller, one more place to be wrong).</td></tr>
+            <tr><td>Column-oriented JSON</td><td>Parses fast, maps onto typed arrays, compresses well (1.09 MB).</td><td>Binary (smaller, opaque; later if needed).</td></tr>
+            <tr><td>Daily archive of raw inputs, not snapshots</td><td>Raw is the ground truth; any snapshot format can be rebuilt from it forever.</td><td>Archive the derived snapshot.</td></tr>
+            <tr><td>Windows Task Scheduler</td><td>Already on the machine; zero new software; the pipeline is idempotent so hourly is safe.</td><td>Airflow / cron container — the Stage-0 anti-pattern.</td></tr>
+            <tr><td>Vite middleware for <span class="mono">/data/orbits/</span></td><td>Keeps pipeline output out of <span class="mono">web/public</span> and git while rehearsing production cache headers.</td><td>Copy the snapshot into <span class="mono">public/</span> (would tempt a commit).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="next">
+      <h2>Immediate next avenues</h2>
+      <div class="opt">
+        <div class="o-key">A</div>
+        <div>
+          <h4>Satellites on the globe</h4>
+          <p>The browser reads the manifest and snapshot, a Web Worker builds satellite.js records from the verbatim OMM columns and propagates all 19k about once a second, the main thread extrapolates and draws one point cloud in <span class="mono">world</span>; click → orbit path, ground track, detail panel from the metadata columns. The whole plan's centrepiece, and every input for it now exists.</p>
+          <p class="tradeoff">Trade-off: none worth naming — this is the natural next stage.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">B</div>
+        <div>
+          <h4>The full catalogue via Space-Track</h4>
+          <p>You register an account (I can't); the pipeline gains a second client with Space-Track's own limits (30 requests/min, 300/hour) pulling the complete GP set (~35k) a few times a day; validation and snapshot are unchanged. Turns the debris toggle from "three clouds" into "everything".</p>
+          <p class="tradeoff">Trade-off: Space-Track's user agreement restricts redistribution without an Orbital Data Request — fine while the site is local, a form to file before it is public.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">C</div>
+        <div>
+          <h4>Pipeline hardening</h4>
+          <p>A test file with the synthetic cases; a summary e-mail or desktop notification on halts; SupGP (operator ephemerides for Starlink/OneWeb) as a seventh dataset; a "stale snapshot" warning if the archive misses a day.</p>
+          <p class="tradeoff">Trade-off: all small; best folded into whatever stage first needs them.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">D</div>
+        <div>
+          <h4>First deployment</h4>
+          <p>GitHub remote, Cloudflare Pages for the site, R2 for <span class="mono">data/orbits/latest</span> with the same cache headers; the pipeline gains a one-function uploader.</p>
+          <p class="tradeoff">Trade-off: still publishes a globe with nothing orbiting it unless A comes first.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="risks">
+      <h2>Open questions and risks</h2>
+      <div class="warn">
+        <div class="eyebrow">Needs your decision</div>
+        <p><strong>Rocket bodies and the rest of the debris.</strong> CelesTrak publishes no all-objects dataset: today's 19,248 covers every active satellite plus three historic debris clouds, but the other ~16,000 tracked objects — most rocket bodies, most fragments — exist only in Space-Track's catalogue, which needs a free account (yours to create) and, for public redistribution, an Orbital Data Request. Two honest options: build the satellite layer on today's data and add Space-Track later; or register now so the pipeline can start archiving the full catalogue from day one. The archive is the argument for sooner.</p>
+      </div>
+      <ul>
+        <li><strong>The PC has to be on.</strong> Task Scheduler runs only while the machine is awake; missed hours are simply missed (the next run catches up in one fetch). Migration to a cloud runner is one workflow file when you want it.</li>
+        <li><strong>One window was spent on the probe.</strong> The ISS-by-catalogue-number request used that dataset's window; we never use that dataset, so nothing was lost.</li>
+        <li><strong>CelesTrak's update phase is inferred, not known.</strong> If they change cadence, the client adapts through 403s rather than breaking, but the log will show it.</li>
+        <li><strong>Epoch strings.</strong> The validator tolerates a missing fractional second; if CelesTrak ever changes the timestamp format, sets would be rejected with "unparseable epoch" and the manifest would show it.</li>
+        <li><strong>SATCAT column names</strong> are read by name and degrade to blanks if renamed upstream; the log warns.</li>
+        <li><strong>Snapshot weight</strong> is 1.09 MB gzipped — acceptable, and splittable.</li>
+        <li><strong>No tests in the repo yet.</strong> The validator was exercised with synthetic bad records in this session; the cases are cheap to turn into a test file.</li>
+      </ul>
+    </section>
+
+    <section id="run">
+      <h2>Running it</h2>
+<pre><code>npm run orbits                  <span class="annot"># one run: fetch if allowed, validate, snapshot, archive (13 s first time, 0.3 s when gated)</span>
+npm run orbits:status           <span class="annot"># what was fetched when, when each dataset may next be asked for, current snapshot</span>
+npm run orbits:rebuild          <span class="annot"># rebuild the snapshot from the newest raw files without touching CelesTrak</span>
+npm run orbits:schedule:status  <span class="annot"># the Task Scheduler job: state, last run, next run</span>
+npm run orbits:unschedule       <span class="annot"># remove the job</span></code></pre>
+      <p>Files to know: <span class="mono">data/orbits/latest/manifest.json</span> (what the site sees), <span class="mono">data/orbits/state.json</span> (the client's memory — don't delete casually), <span class="mono">data/logs/orbits.log</span>. In the browser: <span class="mono">http://localhost:5173/data/orbits/manifest.json</span>.</p>
+    </section>
+
+  </article>
+</div>
