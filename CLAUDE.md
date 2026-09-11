@@ -210,10 +210,11 @@ files (`stars-hyg.bin`, `clouds-4096.webp`) and future workers/routes.
   (same PATH caveat as Node). Pipeline venv: `pipeline/.venv` (numpy 2.5, pillow 12.3 on Python 3.14).
   Run pipeline modules with `uv run --directory pipeline python -m ap_pipeline.<pkg>.<module>`.
 - GPU: NVIDIA RTX 5070; Jack measured **240 fps** for the Stage 1 globe in his own browser.
-- `gh` (GitHub CLI) is **not** installed; Jack creates GitHub repos himself.
+- `gh` (GitHub CLI) is **not** installed; Jack creates GitHub repos himself. HTTPS push works from this shell (credential manager).
 - Git identity is set repo-locally (Jack Barnett / barnettjack29@gmail.com).
 - Working directory: `C:\Users\Jack\Downloads\reboot\Personal\Satellite Platform`
-- Git repo initialised on `main` (2026-09-11). Commit only when Jack says so.
+- Git repo initialised on `main` (2026-09-11). Remote `origin` = https://github.com/jbarnett98/satellites
+  (public; first push 2026-09-12, seven commits). Commit at stage ends; push only when Jack asks.
 - **The Claude Browser pane pauses `requestAnimationFrame` when not displayed**, so fps read
   there is meaningless (1–4), and anything that needs the frame loop (worker ticks, "first
   frame" timings) stalls between my tool calls — batch a screenshot with the actions that
@@ -317,7 +318,7 @@ Commits: Stage 1 `7a3e84d`, Stage 2 `f16d9b8`, journal `d097609`, Stage 3 `a0ba4
 (see git log). Jack said "yes commit" at the end of Stage 1 → **commit at the end of every
 stage** (one commit per stage, message "Stage N: <name>"); still never push without being asked.
 
-Open with Jack after Stage 4: GitHub URL still pending; Space-Track — he has an account, needs the ODR before the public
+Open with Jack after Stage 4: Space-Track — he has an account, needs the ODR before the public
 snapshot can carry Space-Track data; credentials go in git-ignored `pipeline/.env`, never chat.
 
 Journal: `docs/journal/atmospheric-perspective-journal.html` ·
