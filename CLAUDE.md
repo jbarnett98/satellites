@@ -6,17 +6,17 @@ Jack wins — then update this file so it stays true.
 
 Last updated: 2026-09-11 (Stage 4 complete: satellite layer — see §10).
 
-Visual calibration notes (so I don't re-derive them): the Milky Way map is decoded to linear
-light, so `uIntensity` 0.05 ≈ a faint band and 0.3 is vivid — the UI slider (0–1) maps onto
-0–0.3. Star size/alpha curves live in `stars.ts` (`magToSize`, `magToAlpha`). Cloud opacity
-0.42 was Jack's "very subtle". Orbit drag speed factor 0.55 (was 1.3 — "too quick").
+Visual calibration notes (so I don't re-derive them): star size/alpha curves live in
+`stars.ts` (`magToSize`, `magToAlpha`). Cloud opacity 0.42 was Jack's "very subtle". Orbit
+drag speed factor 0.55 (was 1.3 — "too quick"). **The Milky Way is gone (Jack, 2026-09-12):**
+the Tycho-2 star-count glow map looked like blobs at 4096/σ7 and grain at 8192/σ5; he chose
+removal over a photographic image. Don't reintroduce it without a fundamentally better
+source (Gaia-scale density) and his ask.
 Satellites (Stage 4, after Jack's first look): **no white in the satellite palette** — stars
 are white and the two must stay tellable apart (payload `#7fdbe8`, R/B `#f4b860`, debris
 `#a99ccf`, unknown `#ee8fc6`); point size scales by view depth `(17000/depth)^0.6` clamped
 0.6–4× ("too small when I zoom in"); base sizes 3.4/3.4/2.5/3.0 px were "a good size at
-15,000 km". Milky Way map regenerated 8192×4096, σ 7→5 texels (Jack: the 4096/σ7 map was
-"very poor resolution") — **his verdict on the new one is pending; if still poor, default it
-off or drop it.** Jack's machine, measured: 240 fps with the layer, 4.8 MB in 158 ms, parse
+15,000 km". Jack's machine, measured: 240 fps with the layer, 4.8 MB in 158 ms, parse
 10 ms, worker init 62 ms, 6.9 ms per full-catalogue SGP4 tick.
 
 ---
@@ -157,13 +157,12 @@ atmospheric-perspective/            (folder is literally "Satellite Platform" on
   .claude/launch.json               dev-server launch config (node.exe, absolute paths)
   web/                              Svelte 5 + Vite 8 + TS 5.9 + Three r186
     public/textures/earth/          day-{2048,4096,8192}, night-{2048,8192}, clouds-{2048,4096} .webp
-    public/textures/sky/            milky-way-glow-8192.webp (1.19 MB, from Tycho-2, σ 5 texels)
     public/data/sky/                stars-hyg.bin (Int16×4 per star, 934 KB) + stars-hyg.json (meta, names)
     src/lib/astro/                  time.ts (JD, GMST), sun.ts, frames.ts (WGS84, ECI↔scene, ECI→ECEF→geodetic)
     src/lib/orbits/                 loadOrbitSnapshot.ts, SatelliteCatalog.ts, propagation.worker.ts,
                                     PropagationEngine.ts, satcatCodes.ts — plain data + worker, no Three/Svelte
     src/lib/globe/                  Globe.ts (loop, scene graph, setSatellites/pickSatellite), earth.ts, clouds.ts,
-                                    atmosphere.ts, stars.ts, milkyWay.ts, sun.ts, graticule.ts,
+                                    atmosphere.ts, stars.ts, sun.ts, graticule.ts,
                                     satellites.ts (SatelliteLayer), orbitPath.ts — Three only, no Svelte
     src/lib/state/                  clock / settings / status / catalog (.svelte.ts, runes classes)
     src/ui/                         GlobeCanvas (the one Svelte↔Three bridge; loads satellites, pointer
@@ -173,7 +172,6 @@ atmospheric-perspective/            (folder is literally "Satellite Platform" on
     ap_pipeline/paths.py            ROOT / RAW / WEB_PUBLIC and output folders
     ap_pipeline/textures/build_earth_textures_from_nasa.py
     ap_pipeline/sky/build_star_catalog_from_hyg.py
-    ap_pipeline/sky/build_milky_way_glow_from_tycho2.py
     ap_pipeline/orbits/             celestrak_client.py (gates + state), validate_element_sets.py (sgp4),
                                     satcat.py, build_orbit_snapshot.py, run_orbit_update.py (hourly entry)
     scheduling/register_windows_task.ps1   register / -Status / -Remove the hourly task
@@ -196,7 +194,7 @@ imported only in the worker. Satellites live under the `world` group (ECI), neve
 
 **Naming rule (Jack, 2026-09-11):** file and module names must say what they do —
 `build_star_catalog_from_hyg.py`, not `build_stars.py`. Applies to pipeline modules, data
-files (`stars-hyg.bin`, `milky-way-glow-4096.webp`) and future workers/routes.
+files (`stars-hyg.bin`, `clouds-4096.webp`) and future workers/routes.
 
 ## 7. Environment
 
@@ -320,7 +318,7 @@ Commits: Stage 1 `7a3e84d`, Stage 2 `f16d9b8`, journal `d097609`, Stage 3 `a0ba4
 stage** (one commit per stage, message "Stage N: <name>"); still never push without being asked.
 
 Open with Jack after Stage 4: journal Parts 2 and 3 not yet approved; GitHub URL still
-pending; Milky Way verdict; Space-Track — he has an account, needs the ODR before the public
+pending; Space-Track — he has an account, needs the ODR before the public
 snapshot can carry Space-Track data; credentials go in git-ignored `pipeline/.env`, never chat.
 
 Journal: `docs/journal/atmospheric-perspective-journal.html` ·

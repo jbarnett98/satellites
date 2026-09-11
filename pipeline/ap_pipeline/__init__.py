@@ -5,9 +5,8 @@ site-ready into web/public/. Run modules from the pipeline/ directory:
 
     uv run python -m ap_pipeline.textures.build_earth_textures_from_nasa
     uv run python -m ap_pipeline.sky.build_star_catalog_from_hyg
-    uv run python -m ap_pipeline.sky.build_milky_way_glow_from_tycho2
 
-or via the root package.json scripts (npm run textures / stars / milkyway).
+or via the root package.json scripts (npm run textures / stars / orbits).
 """
 
 import sys

@@ -70,7 +70,7 @@
   </dl>
   <p class="credits">
     Orbits: CelesTrak GP &amp; SATCAT (18 SDS data) · SGP4 via satellite.js &nbsp;|&nbsp; NASA Blue Marble · Black Marble · cloud composite
-    &nbsp;|&nbsp; stars HYG 4.4 (CC BY-SA) · Milky Way from Tycho-2 (CDS) &nbsp;|&nbsp; WGS84
+    &nbsp;|&nbsp; stars HYG 4.4 (CC BY-SA) &nbsp;|&nbsp; WGS84
   </p>
 </section>
 

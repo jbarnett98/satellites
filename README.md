@@ -30,13 +30,12 @@ npm run build                 # production bundle in web/dist
 
 ## Rebuild the data the site ships
 
-All three read originals from `data/raw/` (downloaded once, not in git) and write small
+Both read originals from `data/raw/` (downloaded once, not in git) and write small
 site-ready files into `web/public/`.
 
 ```bash
 npm run textures   # NASA Blue Marble / Black Marble / clouds → web/public/textures/earth/*.webp
 npm run stars      # HYG v4.4 → web/public/data/sky/stars-hyg.{bin,json}
-npm run milkyway   # Tycho-2 (2.5M stars) → web/public/textures/sky/milky-way-glow-8192.webp
 ```
 
 ## Orbit data (scheduled)
@@ -62,7 +61,6 @@ Requires Node.js ≥ 24, Python ≥ 3.12 (`py` launcher on Windows) and `uv`.
 
 - Earth imagery: NASA Blue Marble Next Generation (Dec 2004, topography + bathymetry), Black Marble 2016, Blue Marble cloud composite — public domain.
 - Plotted stars: HYG Database v4.4 (David Nash, astronexus.com) — CC BY-SA 4.0.
-- Milky Way glow: summed light of the Tycho-2 catalogue (Høg et al. 2000, CDS I/259).
 - Orbital element sets and satellite catalogue: CelesTrak (celestrak.org), GP data derived from 18 SDS / Space-Track.
 - Propagation: SGP4/SDP4 via satellite.js (MIT) in the browser; the `sgp4` package (Brandon Rhodes) in the pipeline.
 - Earth figure: WGS84.

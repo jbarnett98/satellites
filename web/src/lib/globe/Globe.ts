@@ -19,9 +19,11 @@
  *
  *   skyScene            rendered first with a camera that copies only the main camera's rotation
  *   └─ skyRoot          rotation.y follows `world` so the sky and the Earth stay consistent
- *      ├─ MilkyWay dome (additive, under everything)
  *      ├─ StarField (119k points)
  *      └─ Sun sprite (true angular size, occluded by the Earth in the world pass)
+ *
+ * (A Milky Way glow dome lived here in Stages 2–4; removed at Jack's request — a star-count
+ * map from Tycho-2 could not be made to look right at 1:1.)
  */
 
 import { Group, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
@@ -33,13 +35,12 @@ import { Atmosphere } from './atmosphere';
 import { Clouds, cloudOffset, loadCloudTexture } from './clouds';
 import { Earth, loadEarthTextures, type TextureTier } from './earth';
 import { Graticule } from './graticule';
-import { loadMilkyWayMap, MilkyWay } from './milkyWay';
 import { loadStarCatalog, StarField } from './stars';
 import { SunSprite } from './sun';
 import type { SatelliteLayer, SatelliteLayerStatus } from './satellites';
 
 export type FrameMode = 'eci' | 'ecef';
-export type LayerName = 'atmosphere' | 'nightLights' | 'clouds' | 'stars' | 'milkyWay' | 'graticule' | 'dayNight';
+export type LayerName = 'atmosphere' | 'nightLights' | 'clouds' | 'stars' | 'graticule' | 'dayNight';
 
 /** Live numbers for the selected satellite, computed from the same extrapolation the shader draws. */
 export interface SelectedReadout {
@@ -97,7 +98,6 @@ export class Globe {
   private atmosphere = new Atmosphere();
   private graticule = new Graticule();
   private stars?: StarField;
-  private milkyWay?: MilkyWay;
   private sun = new SunSprite();
   private satellites: SatelliteLayer | null = null;
 
@@ -109,14 +109,10 @@ export class Globe {
     nightLights: true,
     clouds: true,
     stars: true,
-    milkyWay: true,
     graticule: false,
     dayNight: true,
   };
   private starBrightness = 1;
-  private milkyWayIntensity = 0.17;
-  /** Slider 1.0 → this much linear light; keeps the band a glow rather than a fog. */
-  private static readonly MILKY_WAY_MAX = 0.3;
 
   private readonly opts: GlobeOptions;
   private running = false;
@@ -170,19 +166,17 @@ export class Globe {
   private async load(): Promise<void> {
     try {
       // Tier 1: everything needed for a first picture, in parallel.
-      const [lowTex, lowClouds, catalog, milkyWayMap] = await Promise.all([
+      const [lowTex, lowClouds, catalog] = await Promise.all([
         loadEarthTextures(this.renderer, 'low', this.opts.onProgress),
         loadCloudTexture(this.renderer, 2048),
         (async () => {
           this.opts.onProgress?.('Loading 119,613 stars');
           return loadStarCatalog();
         })(),
-        loadMilkyWayMap(),
       ]);
 
-      this.milkyWay = new MilkyWay(milkyWayMap);
       this.stars = new StarField(catalog, this.renderer.getPixelRatio());
-      this.skyRoot.add(this.milkyWay.mesh, this.stars.root);
+      this.skyRoot.add(this.stars.root);
 
       this.clouds = new Clouds(lowClouds);
       this.earth = new Earth(lowTex, lowClouds);
@@ -225,7 +219,6 @@ export class Globe {
     this.atmosphere.dispose();
     this.graticule.dispose();
     this.stars?.dispose();
-    this.milkyWay?.dispose();
     this.sun.dispose();
     this.satellites?.dispose();
     this.renderer.dispose();
@@ -289,19 +282,11 @@ export class Globe {
     this.stars?.setBrightness(b);
   }
 
-  /** `v` is the UI slider, 0–1. */
-  setMilkyWayIntensity(v: number): void {
-    this.milkyWayIntensity = v;
-    this.milkyWay?.setIntensity(v * Globe.MILKY_WAY_MAX);
-  }
-
   private applyLayers(): void {
     this.atmosphere.setVisible(this.layers.atmosphere);
     this.graticule.setVisible(this.layers.graticule);
     this.stars?.setVisible(this.layers.stars);
     this.stars?.setBrightness(this.starBrightness);
-    this.milkyWay?.setVisible(this.layers.milkyWay);
-    this.milkyWay?.setIntensity(this.milkyWayIntensity * Globe.MILKY_WAY_MAX);
     this.clouds?.setVisible(this.layers.clouds);
     this.earth?.setNightLights(this.layers.nightLights);
     this.earth?.setDayNight(this.layers.dayNight);

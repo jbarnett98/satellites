@@ -201,10 +201,6 @@
   });
 
   $effect(() => {
-    globe?.setMilkyWayIntensity(settings.milkyWayIntensity);
-  });
-
-  $effect(() => {
     const l = layer;
     if (!l) return;
     const { on, active, debrisClouds } = settings.satellites;

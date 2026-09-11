@@ -86,12 +86,6 @@
         <input type="range" min="0.4" max="2.2" step="0.05" bind:value={settings.starBrightness} disabled={!settings.layers.stars} />
         <span class="mono val">{settings.starBrightness.toFixed(2)}×</span>
       </label>
-    {:else if name === 'milkyWay'}
-      <label class="slider" class:disabled={!settings.layers.milkyWay}>
-        <span class="eyebrow">Intensity</span>
-        <input type="range" min="0" max="1" step="0.05" bind:value={settings.milkyWayIntensity} disabled={!settings.layers.milkyWay} />
-        <span class="mono val">{Math.round(settings.milkyWayIntensity * 100)}%</span>
-      </label>
     {/if}
   {/each}
 </section>
