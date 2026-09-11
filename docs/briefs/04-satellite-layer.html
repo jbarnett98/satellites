@@ -1,0 +1,439 @@
+<title>Stage 04 · Satellite Layer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F4F6F9; --surface: #FFFFFF; --ink: #1A2230; --muted: #5B6677; --line: #D3DAE3;
+    --accent: #0B7580; --accent-soft: #DFEFF0; --amber: #B45A10; --amber-soft: #FBEEDD;
+    --green: #2F7D4F; --green-soft: #E3F2E8; --code-bg: #EAEFF4; --shadow: 0 1px 2px rgba(26,34,48,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+      --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+      --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+    --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+    --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Source Serif 4", Georgia, serif; font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 96px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 48px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px 16px 64px; } nav.toc { position: static !important; } }
+  header.mast { grid-column: 1 / -1; border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+  .eyebrow { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 46px; line-height: 1.02; margin: 8px 0 12px; text-wrap: balance; }
+  .lede { font-size: 19px; max-width: 66ch; margin: 0 0 20px; }
+  .telemetry { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.7; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 24px; font-variant-numeric: tabular-nums; }
+  .telemetry span { color: var(--muted); } .telemetry b { font-weight: 500; color: var(--ink); }
+  nav.toc { position: sticky; top: 24px; align-self: start; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 600; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--ink); }
+  nav.toc .toc-head { margin-bottom: 8px; }
+  article { max-width: 760px; min-width: 0; }
+  section { padding: 12px 0 28px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  section:last-of-type { border-bottom: 0; }
+  h2 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 30px; line-height: 1.1; margin: 8px 0 14px; text-wrap: balance; }
+  h3 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 20px; line-height: 1.2; margin: 26px 0 8px; text-wrap: balance; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; max-width: 70ch; } li { margin-bottom: 5px; }
+  strong { font-weight: 600; }
+  code, .mono { font-family: "IBM Plex Mono", Consolas, monospace; font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+  pre { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 14px; margin: 0 0 14px; overflow-x: auto; white-space: pre; }
+  pre code { background: none; padding: 0; font-size: inherit; } .annot { color: var(--muted); }
+  .note, .warn, .done { margin: 18px 0 20px; padding: 12px 16px 6px; max-width: 70ch; border-top: 2px solid var(--accent); background: var(--accent-soft); }
+  .warn { border-top-color: var(--amber); background: var(--amber-soft); }
+  .done { border-top-color: var(--green); background: var(--green-soft); }
+  .note .eyebrow { color: var(--accent); margin-bottom: 4px; } .warn .eyebrow { color: var(--amber); margin-bottom: 4px; } .done .eyebrow { color: var(--green); margin-bottom: 4px; }
+  .note p:last-child, .warn p:last-child, .done p:last-child { margin-bottom: 8px; }
+  .tablewrap { overflow-x: auto; margin: 6px 0 18px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.45; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 8px; border-radius: 3px; white-space: nowrap; }
+  .pill.live { background: var(--green-soft); color: var(--green); }
+  .pill.partial { background: var(--accent-soft); color: var(--accent); }
+  .pill.todo { background: var(--code-bg); color: var(--muted); }
+  .pill.risk { background: var(--amber-soft); color: var(--amber); }
+  .opt { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .opt:last-of-type { border-bottom: 1px solid var(--line); }
+  .opt .o-key { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 26px; line-height: 1; color: var(--accent); }
+  .opt h4 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-size: 19px; margin: 0 0 6px; }
+  .opt p { margin-bottom: 6px; }
+  .opt .tradeoff { font-size: 15px; color: var(--muted); }
+  figure { margin: 18px 0 22px; }
+  figure svg { max-width: 100%; height: auto; display: block; color: var(--ink); background: var(--surface); border: 1px solid var(--line); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; max-width: 70ch; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; }
+  .tree { font-size: 12.5px; }
+  .tree .d { color: var(--accent); font-weight: 500; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">Atmospheric Perspective · Stage brief 04 · 11 Sep 2026</div>
+    <h1>The satellite layer: every tracked object, moving, in the browser</h1>
+    <p class="lede">The globe now shows the catalogue. The page reads the pipeline's snapshot, hands the element sets to a Web Worker that runs SGP4 for all 19,247 objects up to thirty times a second, and draws each one as a GPU point that the vertex shader carries forward along its own velocity between ticks. Hover names an object; a click selects it, draws one revolution of its orbit, and opens a card with its live position and catalogue record. Debris clouds, colour by type or regime, Earth's shadow and point size are toggles. The page also notices when the pipeline publishes a new snapshot and swaps it in without a reload.</p>
+    <div class="telemetry" aria-label="Stage numbers">
+      <div><span>OBJECTS DRAWN </span><b>19,247</b> <span>· active by default </span><b>16,582</b></div>
+      <div><span>SGP4, ALL OBJECTS </span><b>6.9 ms</b> <span>per tick on your PC, one worker</span></div>
+      <div><span>TICK RATE </span><b>1 Hz at 1×</b> <span>· </span><b>30 Hz</b> <span>at ≥ 30×</span></div>
+      <div><span>LOAD ON YOUR PC </span><b>4.8 MB in 158 ms</b> <span>· parse 10 ms · init 62 ms</span></div>
+      <div><span>RENDER </span><b>240 fps</b> <span>with the layer on, 8k textures</span></div>
+      <div><span>NEW CODE </span><b>9 files</b> <span>· worker chunk </span><b>21 KB</b></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow toc-head">Contents</div>
+    <ol>
+      <li><a href="#where">Where the project is</a></li>
+      <li><a href="#completed">What we just completed</a></li>
+      <li><a href="#structure">Under the hood: structure</a></li>
+      <li><a href="#flow">Under the hood: from snapshot to pixels</a></li>
+      <li><a href="#timing">Under the hood: the timing model</a></li>
+      <li><a href="#who">Under the hood: your machine vs the browser</a></li>
+      <li><a href="#decisions">Decisions taken</a></li>
+      <li><a href="#next">Immediate next avenues</a></li>
+      <li><a href="#risks">Open questions and risks</a></li>
+      <li><a href="#run">Running it</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section id="where">
+      <h2>Where the project is</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Component</th><th>State</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Globe · sky · time · UI</td><td><span class="pill live">Live</span></td><td>Unchanged from Stage 2, except the Layers panel and status bar grew a satellites section.</td></tr>
+            <tr><td>Orbit pipeline</td><td><span class="pill live">Running</span></td><td>Ran unattended at 22:17 local and produced snapshot <span class="mono">20260911T2117Z</span> — the first fully automatic fetch. 19,247 objects.</td></tr>
+            <tr><td>Satellite layer</td><td><span class="pill live">New</span></td><td>All objects as GPU points under the inertial <span class="mono">world</span> group; correct in both frames. Type / regime colouring, Earth's shadow, size, debris toggle.</td></tr>
+            <tr><td>Propagation</td><td><span class="pill live">New</span></td><td>One Web Worker, satellite.js SGP4/SDP4, whole catalogue per tick, rate scaled to the time-warp.</td></tr>
+            <tr><td>Hover · select · orbit · card</td><td><span class="pill live">New</span></td><td>CPU picking against the same maths the shader draws; one-revolution orbit line; live lat/lon/height/speed with the SATCAT record.</td></tr>
+            <tr><td>Snapshot hot-swap</td><td><span class="pill live">New</span></td><td>Manifest re-checked every 10 min and on tab focus; a new version loads in the background and replaces the layer, keeping the selection by catalogue number.</td></tr>
+            <tr><td>Full catalogue (rocket bodies, all debris)</td><td><span class="pill risk">Your account</span></td><td>Space-Track account exists; what to file and where is in the chat and under risks.</td></tr>
+            <tr><td>Milky Way map</td><td><span class="pill partial">Regenerated</span></td><td>8192 × 4096 from Tycho-2, blur cut from 0.6° to 0.2°; 1.19 MB. Your verdict decides whether it stays on by default.</td></tr>
+            <tr><td>Hosting</td><td><span class="pill todo">Local only</span></td><td>Unchanged. The layer is built to the production data contract already (manifest + immutable file).</td></tr>
+            <tr><td>Repository</td><td><span class="pill live">5 commits</span></td><td>Stage 4 committed at the end of this stage. GitHub remote still pending your URL.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="completed">
+      <h2>What we just completed</h2>
+      <ul>
+        <li><strong>Measured before designing.</strong> We benchmarked satellite.js 7 on the real snapshot in Node first: building 19,247 satellite records takes ~100 ms; propagating all of them takes 7–10 ms in plain JavaScript once the JIT has warmed (54 ms on the very first call), 5 ms with the library's WebAssembly build, and 11–14 ms with its four-thread build (thread sync costs more than it saves at this size). Positions from the JS and WASM paths agree to a micrometre. That settled the architecture: one worker, plain JavaScript, no worker pool, no SharedArrayBuffer headers.</li>
+        <li><strong>The loader.</strong> Two requests — <span class="mono">manifest.json</span> (always revalidated) then the immutable <span class="mono">gp-&lt;version&gt;.json</span> it names — streamed so the status bar can show bytes arriving, then parsed and checked for the 17 OMM columns. The page never talks to CelesTrak.</li>
+        <li><strong>The catalogue view.</strong> One byte per object for type, regime, debris-cloud membership and the stale flag; counts by class; a NORAD → index map; the filter mask the GPU reads.</li>
+        <li><strong>The propagation worker.</strong> Receives the OMM columns, builds one satellite record per object, and on each request runs SGP4 for every object at one simulation instant, writing position and velocity into two transferable buffers that go to the main thread with zero copying and come back for reuse. It also samples one revolution of a selected object on demand.</li>
+        <li><strong>The engine.</strong> Decides when to ask: 1 Hz in real time, rising with the time-warp to a 30 Hz cap, at most one request in flight, and an immediate tick on any jump or rate change. Each request is aimed at the middle of the interval it will be displayed for, so the shader extrapolates half an interval backward and forward rather than a whole one forward.</li>
+        <li><strong>The layer.</strong> A single <span class="mono">Points</span> mesh with a custom vertex shader that moves every point by <em>p = p₀ + v₀Δt + ½aΔt²</em> with point-mass gravity, tints by type or regime, dims objects inside the Earth's shadow cylinder, scales dot size by view depth (<em>(17,000 km ÷ depth)^0.6</em>, clamped 0.6–4×), and enlarges the hovered and selected object. The fragment shader draws an anti-aliased disc with a dark rim so a dot reads on black space and on sunlit cloud alike. Depth-tested against the Earth, so the far side is hidden.</li>
+        <li><strong>Interaction.</strong> Picking runs on the CPU with the same extrapolation, projects every visible object to the screen, ignores anything behind the planet, and takes the nearest within 9 px (12 px for a click). A press that travels more than 5 px is a drag, not a click. The hover label follows the pointer; the card shows live geodetic position (proper WGS84 conversion, new in <span class="mono">frames.ts</span>), height, speed, sunlit or eclipsed, then the orbit and the SATCAT record with owner and launch-site codes spelled out.</li>
+        <li><strong>Verified in the browser:</strong> first load, hover, select, deselect, debris toggle (16,582 → 19,247 shown), regime colouring, Earth-fixed frame, 3,600× (worker at 26 Hz, 9.7 ms per tick), and the hot-swap — a rebuilt snapshot (<span class="mono">orbits:rebuild</span>, no fetch) was picked up by the open page and swapped in with the ISS still selected.</li>
+        <li><strong>Your first look, folded in.</strong> Points now scale with their distance from the camera (base size at 17,000 km, up to 4× when you fly in close, tapering far out) instead of a fixed pixel size; payloads moved from near-white to cyan so stars and satellites are never the same colour; the card's labels no longer wrap; a spurious re-tick at 3,600× that your 36 Hz reading exposed is fixed (the jump detector's tolerance is now rate-aware); and the Milky Way map was regenerated at twice the resolution with a third of the blur.</li>
+      </ul>
+      <div class="done">
+        <div class="eyebrow">Working principles honoured</div>
+        <p>The browser does the maths; the pipeline did its part hours ago. No new services, no new dependencies beyond satellite.js. Nothing about the layer assumes localhost: it reads the same manifest contract object storage will serve. Credits for CelesTrak and satellite.js joined the status bar.</p>
+      </div>
+    </section>
+
+    <section id="structure">
+      <h2>Under the hood: structure</h2>
+<pre class="tree"><code><span class="d">web/src/lib/orbits/</span>                 <span class="annot">plain data and workers — no Three.js, no Svelte</span>
+├─ loadOrbitSnapshot.ts        <span class="annot">manifest → gp file, streamed with progress, column types, timings</span>
+├─ SatelliteCatalog.ts         <span class="annot">read-only view: type/regime codes, debris-cloud flag, counts, NORAD lookup, filter mask</span>
+├─ propagation.worker.ts       <span class="annot">the Web Worker: json2satrec ×N, sgp4 ×N per tick, orbit sampling, buffer pool</span>
+├─ PropagationEngine.ts        <span class="annot">main-thread side: when to tick, midpoint targeting, stats, frame hand-off</span>
+└─ satcatCodes.ts              <span class="annot">owner / launch-site / status / RCS codes → labels</span>
+<span class="d">web/src/lib/globe/</span>
+├─ satellites.ts               <span class="annot">SatelliteLayer: Points + shaders, filters, picking, live sampling</span>
+├─ orbitPath.ts                <span class="annot">OrbitPath: one revolution as a fading closed line, phase follows the object</span>
+└─ Globe.ts                    <span class="annot">+ setSatellites / pickSatellite / rateSource; per-frame update; selected readout</span>
+<span class="d">web/src/lib/astro/</span>
+└─ frames.ts                   <span class="annot">+ eciToEcef, ecefToGeodetic (WGS84), EARTH_MU</span>
+<span class="d">web/src/lib/state/</span>
+├─ catalog.svelte.ts           <span class="annot">load phase and progress, the catalogue, hovered/selected, propagation stats, timings</span>
+└─ settings.svelte.ts          <span class="annot">+ satellites: on / active / debrisClouds / colorBy / sizeScale / earthShadow / orbitPath</span>
+<span class="d">web/src/ui/</span>
+├─ GlobeCanvas.svelte          <span class="annot">+ load sequence, hot-swap poll, pointer picking, settings → layer effects</span>
+├─ ObjectCard.svelte           <span class="annot">the selected object: live readout, orbit, catalogue record</span>
+├─ HoverLabel.svelte           <span class="annot">name · NORAD · type · regime · perigee–apogee at the pointer</span>
+├─ LayersPanel.svelte          <span class="annot">+ Satellites section with counts, colour mode, legend, size, shadow, orbit</span>
+└─ StatusBar.svelte            <span class="annot">+ Objects, Elements (snapshot age), Propagation, Loaded rows</span>
+<span class="d">web/</span>
+├─ package.json                <span class="annot">+ satellite.js ^7.1, @types/node</span>
+└─ vite.config.ts              <span class="annot">+ worker.format = 'es' (module workers; the WASM runtimes stay out of the bundle)</span></code></pre>
+      <p>Dependency direction is unchanged — <span class="mono">ui → state → globe → astro</span> — with <span class="mono">orbits</span> sitting beside <span class="mono">astro</span> at the bottom: pure data and a worker, imported by <span class="mono">globe</span> and <span class="mono">state</span>, importing neither. satellite.js is imported only inside the worker; the main bundle grew by 1 KB.</p>
+    </section>
+
+    <section id="flow">
+      <h2>Under the hood: from snapshot to pixels</h2>
+      <p>Three actors, three kinds of memory. The pipeline wrote the snapshot hours ago. The main thread fetches it once and keeps the human-readable columns (names, owners, periods) for the UI. The worker keeps the propagator's own records and does all the orbital arithmetic. The GPU keeps two small buffers of positions and velocities and does the per-frame motion itself.</p>
+      <figure>
+        <svg viewBox="0 0 980 470" role="img" aria-label="Data flow: the pipeline writes manifest.json and gp-version.json into data/orbits/latest; the main thread fetches the manifest then the gp file, parses it, builds the catalogue, and sends the 17 OMM columns to the worker; the worker builds satellite records and, on each propagate request with a simulation time, runs SGP4 for every object and returns position and velocity buffers by transfer; the main thread copies them into the GPU attributes and returns the buffers to the worker; every frame the vertex shader extrapolates with p = p0 + v dt + half a dt squared using the uDt uniform. Hover and click use the same formula on the CPU." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="f-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="f-aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+          </defs>
+
+          <!-- lanes -->
+          <text x="20" y="26" font-weight="700" font-size="13">your PC · pipeline (hourly)</text>
+          <text x="290" y="26" font-weight="700" font-size="13">browser · main thread</text>
+          <text x="600" y="26" font-weight="700" font-size="13">browser · worker</text>
+          <text x="810" y="26" font-weight="700" font-size="13">browser · GPU</text>
+          <line x1="270" y1="34" x2="270" y2="450" stroke="currentColor" stroke-width="0.6" stroke-dasharray="3 4"/>
+          <line x1="580" y1="34" x2="580" y2="450" stroke="currentColor" stroke-width="0.6" stroke-dasharray="3 4"/>
+          <line x1="790" y1="34" x2="790" y2="450" stroke="currentColor" stroke-width="0.6" stroke-dasharray="3 4"/>
+
+          <!-- pipeline -->
+          <rect x="20" y="50" width="220" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="70" font-weight="700">data/orbits/latest/</text>
+          <text x="30" y="88">manifest.json  (no-cache)</text>
+          <text x="30" y="104">gp-20260911T2117Z.json  (immutable)</text>
+
+          <!-- main: load -->
+          <rect x="290" y="50" width="270" height="118" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="70" font-weight="700">load, once per page (or per new version)</text>
+          <text x="300" y="90">GET manifest → GET gp file  (4.77 MB, streamed)</text>
+          <text x="300" y="106">JSON.parse  ~12 ms  → 32 columns × 19,247</text>
+          <text x="300" y="122">SatelliteCatalog: codes, counts, filter mask</text>
+          <text x="300" y="138">→ 17 OMM columns to the worker</text>
+          <text x="300" y="156" style="fill:var(--muted)">keeps names, owners, periods for the UI</text>
+          <line x1="240" y1="80" x2="288" y2="80" stroke="currentColor" stroke-width="1.4" marker-end="url(#f-a)"/>
+
+          <!-- worker: init -->
+          <rect x="600" y="50" width="170" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="610" y="70" font-weight="700">init</text>
+          <text x="610" y="88">json2satrec × 19,247</text>
+          <text x="610" y="104">~100 ms · 0 errors</text>
+          <line x1="560" y1="138" x2="598" y2="90" stroke="currentColor" stroke-width="1.4" marker-end="url(#f-a)"/>
+
+          <!-- main: engine -->
+          <rect x="290" y="200" width="270" height="96" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="220" font-weight="700">PropagationEngine, every frame</text>
+          <text x="300" y="240">due?  1 Hz at 1× … 30 Hz at ≥ 30×</text>
+          <text x="300" y="256">target = now + rate × (round-trip + interval / 2)</text>
+          <text x="300" y="272">one request in flight; jump or rate change → now</text>
+          <text x="300" y="288" style="fill:var(--muted)">on frame: copy 2 × 231 KB into attributes, return buffers</text>
+
+          <!-- worker: tick -->
+          <rect x="600" y="200" width="170" height="96" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="610" y="220" font-weight="700">tick (simMs)</text>
+          <text x="610" y="240">sgp4 × 19,247  7–10 ms</text>
+          <text x="610" y="256">ECI → scene swizzle</text>
+          <text x="610" y="272">pos, vel Float32 ×3</text>
+          <text x="610" y="288">transfer, then recycled</text>
+          <line x1="560" y1="232" x2="598" y2="232" stroke="currentColor" stroke-width="1.4" marker-end="url(#f-a)"/>
+          <text x="579" y="226" text-anchor="middle" font-size="11">propagate</text>
+          <line x1="598" y1="268" x2="560" y2="268" style="stroke:var(--accent)" stroke-width="1.4" marker-end="url(#f-aa)"/>
+          <text x="579" y="282" text-anchor="middle" font-size="11" style="fill:var(--accent)">frame</text>
+
+          <!-- GPU -->
+          <rect x="810" y="200" width="160" height="132" fill="none" style="stroke:var(--accent)" stroke-width="1.4"/>
+          <text x="820" y="220" font-weight="700" style="fill:var(--accent)">vertex shader, every frame</text>
+          <text x="820" y="240">a = −μ p₀ / |p₀|³</text>
+          <text x="820" y="256">p = p₀ + v₀Δt + ½aΔt²</text>
+          <text x="820" y="272">Δt = uDt (one uniform)</text>
+          <text x="820" y="292">colour · size · shadow</text>
+          <text x="820" y="308">hovered / selected</text>
+          <text x="820" y="324">filtered → off-screen</text>
+          <line x1="560" y1="248" x2="808" y2="248" style="stroke:var(--accent)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#f-aa)"/>
+          <text x="684" y="184" text-anchor="middle" font-size="11" style="fill:var(--accent)">position + velocity attributes (dynamic)</text>
+          <line x1="684" y1="188" x2="684" y2="196" style="stroke:var(--accent)" stroke-width="1"/>
+
+          <!-- main: picking -->
+          <rect x="290" y="330" width="270" height="96" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="350" font-weight="700">hover / click on the CPU</text>
+          <text x="300" y="370">same formula, every visible object (~1–2 ms)</text>
+          <text x="300" y="386">project → nearest within 9 px (12 px on click)</text>
+          <text x="300" y="402">skip anything behind the Earth</text>
+          <text x="300" y="418" style="fill:var(--muted)">card readout: ECI → ECEF (GMST) → WGS84 geodetic</text>
+
+          <!-- worker: orbit path -->
+          <rect x="600" y="330" width="170" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="610" y="350" font-weight="700">orbitPath (index)</text>
+          <text x="610" y="368">sgp4 × 361 over one period</text>
+          <text x="610" y="384">~0.3 ms → fading Line</text>
+          <line x1="560" y1="360" x2="598" y2="360" stroke="currentColor" stroke-width="1.4" marker-end="url(#f-a)"/>
+          <text x="579" y="354" text-anchor="middle" font-size="11">on select</text>
+
+          <!-- hot swap -->
+          <text x="20" y="150" font-weight="700">every 2 h</text>
+          <text x="20" y="166">the pipeline writes a</text>
+          <text x="20" y="182">new version + manifest</text>
+          <text x="20" y="214" font-weight="700">every 10 min · on tab focus</text>
+          <text x="20" y="230">the page re-reads the manifest;</text>
+          <text x="20" y="246">new version → reload + swap,</text>
+          <text x="20" y="262">selection kept by NORAD id</text>
+        </svg>
+        <figcaption>Figure 1 — Who holds what. Element sets cross the worker boundary once; afterwards only positions and velocities move, by transfer, and the GPU does the per-frame motion.</figcaption>
+      </figure>
+
+      <h3>Why the shader moves the points</h3>
+      <p>Running SGP4 every frame for 19,247 objects would cost 7–10 ms of main-thread time per frame — most of a 60 Hz budget and more than a 240 Hz frame has. Instead the worker computes exact positions and velocities at one instant, and the vertex shader — which runs on every vertex every frame anyway — coasts each point forward from that instant: velocity times elapsed time, plus a gravity term computed from the point's own position. Between ticks a satellite is on a parabola tangent to its orbit; the error grows with the cube of the elapsed time, and the engine keeps that time short in <em>simulation</em> seconds regardless of the time-warp. The main thread's whole per-frame contribution is one number: Δt.</p>
+      <p>The same formula runs on the CPU for picking and for the card's live readout, so what the pointer hits and what the card reports is exactly what is drawn — not a separate, slightly different propagation.</p>
+
+      <h3>Frames</h3>
+      <p>The layer lives under the <span class="mono">world</span> group in ECI, as planned in Stage 1. In the inertial view the group is fixed and the Earth rotates inside the shell of points; in the Earth-fixed view the group turns by −GMST and everything stays consistent with no per-object work. The Earth's shadow test and the sun direction use the same world-rotated vector the Earth shader already receives.</p>
+    </section>
+
+    <section id="timing">
+      <h2>Under the hood: the timing model</h2>
+      <p>Two clocks matter: real seconds (how often the worker can finish a tick) and simulation seconds (how far the shader must extrapolate). The engine ties them together with three rules.</p>
+      <ol>
+        <li><strong>Interval by rate.</strong> Ticks are spaced <em>1000 ms ÷ rate</em>, clamped between 33 ms (30 Hz) and 1000 ms (1 Hz). Paused: no ticks at all until the time changes.</li>
+        <li><strong>One in flight.</strong> A new request is never sent while one is unanswered, so a slow machine simply ticks less often rather than queueing up.</li>
+        <li><strong>Aim for the middle.</strong> Each request asks for positions at <em>now + rate × (round-trip + interval ÷ 2)</em> — the simulation instant halfway through the time this frame will be on screen. The shader then extrapolates backward for the first half and forward for the second, halving the maximum Δt.</li>
+      </ol>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Time rate</th><th>Tick rate</th><th>Max Δt (sim)</th><th>LEO error at max Δt</th><th>Worker load</th></tr></thead>
+          <tbody>
+            <tr><td>1× (live)</td><td class="num">1 Hz</td><td class="num">±0.5 s</td><td class="num">&lt; 1 mm</td><td class="num">~1 %</td></tr>
+            <tr><td>10×</td><td class="num">10 Hz</td><td class="num">±0.5 s</td><td class="num">&lt; 1 mm</td><td class="num">~8 %</td></tr>
+            <tr><td>60×</td><td class="num">30 Hz</td><td class="num">±1 s</td><td class="num">~2 mm</td><td class="num">~25 %</td></tr>
+            <tr><td>600×</td><td class="num">30 Hz</td><td class="num">±10 s</td><td class="num">~1.6 m</td><td class="num">~25 %</td></tr>
+            <tr><td>3,600×</td><td class="num">26–30 Hz</td><td class="num">±60 s</td><td class="num">~0.35 km</td><td class="num">~25 %</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Error estimates use the third-order residual of the parabola, <em>≈ jerk × Δt³ / 6</em>, with jerk ≈ 0.01 m/s³ for a 400 km orbit. Even the worst case — 0.35 km at 3,600× — is a fraction of one pixel at globe scale (one pixel ≈ 30 km at the default view). Worker load is measured: 7–10 ms per tick on this PC. Stale sets and decayed objects that SGP4 refuses at a given time are parked at the Earth's centre, where the depth test hides them; the count shows in the worker stats.</p>
+      <div class="note">
+        <div class="eyebrow">What the status bar's "Propagation" row means</div>
+        <p><span class="mono">1.0 Hz · 8.2 ms/tick · Δt 0.4 s</span> reads: the worker delivered one full-catalogue propagation per second; each took 8.2 ms; the frame you are looking at is 0.4 simulation seconds away from the last exact positions (negative just after a frame lands, because of rule 3). The "Loaded" row is the load timeline for your machine.</p>
+      </div>
+    </section>
+
+    <section id="who">
+      <h2>Under the hood: your machine vs the browser</h2>
+      <p>You asked what is required of the browser and what of your PC. The split is now concrete.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Work</th><th>Where</th><th>When</th><th>Cost</th></tr></thead>
+          <tbody>
+            <tr><td>Download element sets and SATCAT</td><td>your PC (pipeline)</td><td>every 2 h</td><td class="num">~13 s, 6 requests</td></tr>
+            <tr><td>Validate with reference SGP4, join catalogue, write snapshot</td><td>your PC (pipeline)</td><td>every 2 h</td><td class="num">included above</td></tr>
+            <tr><td>Serve the snapshot</td><td>dev server now; object storage + CDN later</td><td>per visitor</td><td class="num">1.09 MB gzipped (4.77 MB raw)</td></tr>
+            <tr><td>Fetch + parse the snapshot</td><td>browser, main thread</td><td>once per load, and per new version</td><td class="num">~12 ms parse; download is network-bound</td></tr>
+            <tr><td>Build 19,247 satellite records</td><td>browser, worker</td><td>once per load</td><td class="num">70–190 ms</td></tr>
+            <tr><td>SGP4 for every object</td><td>browser, worker</td><td>1–30 × per second</td><td class="num">7–10 ms each → 1–25 % of one core</td></tr>
+            <tr><td>Move, colour, shade every point</td><td>browser, GPU</td><td>every frame</td><td class="num">19k vertices — negligible</td></tr>
+            <tr><td>Apply a new frame</td><td>browser, main thread</td><td>per tick</td><td class="num">~0.1 ms (two 231 KB copies)</td></tr>
+            <tr><td>Hover picking</td><td>browser, main thread</td><td>≤ 25 × per second while the pointer moves</td><td class="num">~1–2 ms</td></tr>
+            <tr><td>Orbit of the selected object</td><td>browser, worker</td><td>on select, then every 20 sim-minutes</td><td class="num">~0.3 ms</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Load timeline, measured on your PC</h3>
+      <p>From your status bar: <strong>4.8 MB in 158 ms · parse 10 ms · worker init 62 ms</strong>, then the first positions two or three frames later; the worker ticks in <strong>6.9 ms</strong>; the page renders at <strong>240 fps</strong> with the layer on and the 8k textures. (In my preview pane the same loads showed manifest 9–12 ms, download 38–52 ms, parse 10–15 ms, init 68–189 ms — but that pane throttles animation frames to ~1 per second, so its "first frame" and fps readings are meaningless; yours are the reference.)</p>
+      <h3>What the browser needs</h3>
+      <ul>
+        <li><strong>WebGL 2</strong> (Three.js r186 requires it) and <strong>module Web Workers</strong> — every desktop browser since 2023. No SharedArrayBuffer, no special headers, no WebGPU.</li>
+        <li><strong>Memory:</strong> ~55 MB main-thread heap after load (catalogue columns, Three.js, textures' JS side); the worker holds ~20 MB of satellite records; GPU-side the layer is under 1 MB.</li>
+        <li><strong>CPU:</strong> one core lightly used at 1×; a quarter of one core at 30 Hz ticks. The frame loop's own cost is unchanged from Stage 2.</li>
+        <li><strong>Network:</strong> 1.09 MB once, then a 2 KB manifest check every 10 minutes.</li>
+      </ul>
+    </section>
+
+    <section id="decisions">
+      <h2>Decisions taken this stage</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Decision</th><th>Why</th><th>Alternative not taken</th></tr></thead>
+          <tbody>
+            <tr><td>One worker, plain JavaScript</td><td>7–10 ms for the whole catalogue; no coordination code; no COOP/COEP headers.</td><td>Worker pool (measured: unnecessary); satellite.js WASM (5 ms, but its glue embeds the binary as a raw byte-string that a bundler can corrupt — documented upgrade path); pthreads (slower at this size, needs cross-origin isolation).</td></tr>
+            <tr><td>Shader extrapolation with gravity</td><td>Per-frame cost is one uniform; sub-metre at every rate below 600×.</td><td>Propagate every frame (7–10 ms of main thread per frame); linear-only (30× worse at 3,600×); Keplerian in-shader (more code for no visible gain).</td></tr>
+            <tr><td>Midpoint targeting</td><td>Halves the worst-case Δt for free.</td><td>Request "now" and only extrapolate forward.</td></tr>
+            <tr><td>Main thread parses the JSON, worker builds records</td><td>The UI needs names and catalogue fields anyway; 12 ms parse is nothing; the worker gets only the 17 OMM columns.</td><td>Worker fetches and parses, then posts every column back (a second copy of everything).</td></tr>
+            <tr><td>Worker emits scene-frame coordinates</td><td>Buffers go straight to the GPU; the swizzle is free.</td><td>Emit ECI and swizzle on the main thread each tick.</td></tr>
+            <tr><td>CPU picking, not GPU id-buffer picking</td><td>Same maths as the draw; 1–2 ms; no extra render pass or readback.</td><td>Render object ids to a texture and read the pixel (robust, more machinery).</td></tr>
+            <tr><td>Selection persists by NORAD id across snapshot swaps</td><td>Indices change between versions; catalogue numbers don't.</td><td>Drop the selection on refresh.</td></tr>
+            <tr><td>Filter by "active catalogue" vs "debris clouds", not by SATCAT type</td><td>Matches your baseline decision (active by default, debris as a toggle) and the pipeline's group semantics.</td><td>Four type toggles (available later; the codes are on the GPU already).</td></tr>
+            <tr><td>Dark-rimmed discs</td><td>Readable over sunlit cloud and over black space without two point styles.</td><td>Additive glow (washes out on the day side).</td></tr>
+            <tr><td>No white in the satellite palette</td><td>Stars are white; after your first look the two were indistinguishable. Payloads are cyan, debris lavender, rocket bodies amber.</td><td>Keep white payloads and make stars a different shape (they'd still read as one field of dots).</td></tr>
+            <tr><td>Depth-scaled points, exponent 0.6</td><td>Zooming in should grow the dots (your note) without true perspective's 1/z, which makes the near side of the shell ten times the far side.</td><td>Fixed pixel size (Stage 4 first cut); full 1/z attenuation.</td></tr>
+            <tr><td>Milky Way at 8192 × 4096, blur 0.2°</td><td>The 4096 / 0.6° map read as blobs at 1:1; a star-count map needs fewer texels per star, not more blur. 1.19 MB, loaded once.</td><td>Drop the Milky Way (still your call — it's a toggle and could default off); use a photographic all-sky image (you asked for data, not an image).</td></tr>
+            <tr><td>Orbit line is 1 px, fades from the object</td><td>Clean; WebGL core lines are 1 px; the fade says "where it is going" without arrows.</td><td>Fat lines (Line2) — a later choice if you want weight.</td></tr>
+            <tr><td>Hot-swap by polling the manifest</td><td>The page is meant to stay open; 2 KB every 10 min is nothing; no server push needed.</td><td>Reload the tab; WebSocket / SSE (a server).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="next">
+      <h2>Immediate next avenues</h2>
+      <div class="opt">
+        <div class="o-key">A</div>
+        <div>
+          <h4>Find things: search, constellations, filters</h4>
+          <p>Search by name or NORAD id, group by constellation (Starlink, OneWeb, Kuiper, GPS, Galileo…) and owner, per-type toggles, "only what's above the horizon at a place". All of it is in memory already; this is UI and a few index tables.</p>
+          <p class="tradeoff">Small step, high daily value; no new data.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">B</div>
+        <div>
+          <h4>Ground tracks and observer tools</h4>
+          <p>Ground track of the selected object, an observer location (yours, or a click on the globe), next passes with azimuth/elevation and rise/set times, "what's overhead now". Needs the ECI → topocentric maths (satellite.js has it) in the worker and a small "observer" panel.</p>
+          <p class="tradeoff">The feature people actually use a satellite site for; medium effort.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">C</div>
+        <div>
+          <h4>Space-Track: the full catalogue and history</h4>
+          <p>A second pipeline client (login, the <span class="mono">gp</span> class query for everything on orbit, TIP/decay messages), archived from day one; the public snapshot stays CelesTrak-only until your ODR is approved, then the toggle grows from 2.6k to ~16k debris and rocket bodies.</p>
+          <p class="tradeoff">Data completeness; needs your credentials in a git-ignored <span class="mono">pipeline/.env</span> and the ODR question answered.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">D</div>
+        <div>
+          <h4>Go public: Cloudflare Pages + R2</h4>
+          <p>The pipeline uploads <span class="mono">latest/</span> to an R2 bucket with the same headers the dev middleware sends; Pages serves the built site; the hourly task keeps feeding it while your PC is on, GitHub Actions takes over when you say. Everything on the page already speaks that contract.</p>
+          <p class="tradeoff">Roughly a day of setup, $0/month on the free tiers; the moment the project becomes a link you can send.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="risks">
+      <h2>Open questions and risks</h2>
+      <div class="warn">
+        <div class="eyebrow">Needs your input</div>
+        <p><strong>The Milky Way.</strong> The regenerated map is sharper but grainier — it is a count of 2.5 million Tycho-2 stars, and at this resolution the grain is the stars themselves. If it still looks poor on your monitor, say so and it goes off by default (or out entirely); the only "smooth" alternative is a photographic all-sky image, which you ruled out in Stage 2.</p>
+      </div>
+      <ul>
+        <li><strong>Epoch precision.</strong> JavaScript's <span class="mono">Date</span> keeps milliseconds; CelesTrak's epochs carry microseconds. satellite.js therefore rounds each epoch by up to 0.5 ms — up to 4 m of along-track position for a LEO object. Irrelevant for the globe; noted for any future precision feature (we'd parse the fraction ourselves).</li>
+        <li><strong>Density is honest.</strong> 16,582 active objects over a 6,400 km sphere <em>is</em> a dense shell; the depth scaling, the rim and the size slider are the levers. The lines you saw at 3,600× are real: 5,134 Starlinks at 53° inclination and 3,620 at 43° pile up at their turning latitudes (see the chat).</li>
+        <li><strong>Picking walks every visible object.</strong> 1–2 ms at 19k; ~3 ms at 35k. Fine while it is throttled to 25 Hz and only runs while the pointer moves; a spatial index is the answer if it ever isn't.</li>
+        <li><strong>The main bundle is 670 KB (177 KB gzipped)</strong>, almost all Three.js; the worker is 21 KB. Code-splitting is a build-config change when hosting makes it matter.</li>
+        <li><strong>The dev server sends the snapshot uncompressed</strong> (4.77 MB). Production serving must gzip or brotli it (Cloudflare does); a binary snapshot format is the next lever after that.</li>
+        <li><strong>Worker saturation on slow machines.</strong> If a tick takes longer than the interval, the engine ticks less often and Δt grows; the status row shows it. Nothing breaks.</li>
+        <li><strong>WebGL points have a maximum size</strong> (typically 64–256 px); the selected ring at 18 px is far inside it.</li>
+        <li><strong>Objects SGP4 rejects at the current time</strong> (decayed sets propagated into the future) are hidden at the Earth's centre rather than removed; the status row's error count is the tell.</li>
+      </ul>
+    </section>
+
+    <section id="run">
+      <h2>Running it</h2>
+<pre><code>npm run dev                     <span class="annot"># http://localhost:5173 — satellites load automatically after the globe paints</span>
+npm run check                   <span class="annot"># svelte-check + TypeScript over the whole web app (clean)</span>
+npm run build                   <span class="annot"># production bundle: dist/ — main 670 KB, worker 21 KB</span>
+npm run orbits                  <span class="annot"># the pipeline, by hand; the scheduled task already runs it hourly</span></code></pre>
+      <p>In the page: hover any dot for its name; click to select; click empty space or the card's × to deselect; <strong>Layers</strong> → Satellites for debris clouds, colour by type or regime, size, Earth's shadow, and the orbit line. Dev console: <span class="mono">__globe</span> (the renderer), <span class="mono">__state</span> (catalog, settings, clock, status); the load timeline is logged as <span class="mono">[satellites] …</span>.</p>
+    </section>
+
+  </article>
+</div>

@@ -1,6 +1,23 @@
 import type { FrameMode, LayerName } from '../globe/Globe';
+import type { SatelliteColorMode } from '../globe/satellites';
 
-export type { FrameMode, LayerName };
+export type { FrameMode, LayerName, SatelliteColorMode };
+
+export interface SatelliteSettings {
+  /** Master switch for the whole layer. */
+  on: boolean;
+  /** The active catalogue: active, stations, last-30-days groups. */
+  active: boolean;
+  /** The three fragmentation clouds (Fengyun-1C, Iridium 33, Cosmos 2251). */
+  debrisClouds: boolean;
+  colorBy: SatelliteColorMode;
+  /** Multiplier on point size; 1 = calibrated default. */
+  sizeScale: number;
+  /** Dim objects inside the Earth's shadow. */
+  earthShadow: boolean;
+  /** Draw one revolution of the selected object's orbit. */
+  orbitPath: boolean;
+}
 
 export const LAYER_LABELS: Record<LayerName, { label: string; hint: string }> = {
   dayNight: { label: 'Day / night', hint: 'Shade the planet by the Sun; off = fully lit' },
@@ -28,6 +45,15 @@ class Settings {
   /** Slider 0–1; the globe maps it onto 0–0.3 linear light (see Globe.setMilkyWayIntensity). */
   milkyWayIntensity = $state(0.17);
   layersOpen = $state(false);
+  satellites = $state<SatelliteSettings>({
+    on: true,
+    active: true,
+    debrisClouds: false,
+    colorBy: 'type',
+    sizeScale: 1,
+    earthShadow: true,
+    orbitPath: true,
+  });
 }
 
 export const settings = new Settings();

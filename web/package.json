@@ -11,11 +11,13 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "satellite.js": "^7.1.0",
     "three": "^0.186.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^24.13.4",
     "@types/three": "^0.185.4",
     "svelte": "^5.57.0",
     "svelte-check": "^4.7.6",

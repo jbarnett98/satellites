@@ -4,14 +4,21 @@
   import TimeControls from './ui/TimeControls.svelte';
   import LayersPanel from './ui/LayersPanel.svelte';
   import StatusBar from './ui/StatusBar.svelte';
+  import ObjectCard from './ui/ObjectCard.svelte';
+  import HoverLabel from './ui/HoverLabel.svelte';
   import { settings } from './lib/state/settings.svelte';
 </script>
 
 <main class="app">
   <GlobeCanvas />
+  <HoverLabel />
 
   <div class="chrome top">
     <TopBar />
+  </div>
+
+  <div class="chrome object">
+    <ObjectCard />
   </div>
 
   {#if settings.layersOpen}
@@ -54,6 +61,11 @@
   .layers {
     top: 58px;
     right: 16px;
+  }
+
+  .object {
+    top: 58px;
+    left: 16px;
   }
 
   .bottom-left {

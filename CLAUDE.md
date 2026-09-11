@@ -4,12 +4,20 @@ This file is my standing brief. It is loaded into context every session in this 
 Read it before doing anything. If something here conflicts with what Jack says in chat,
 Jack wins — then update this file so it stays true.
 
-Last updated: 2026-09-11 (Stage 3 complete: orbit pipeline scheduled — see §10).
+Last updated: 2026-09-11 (Stage 4 complete: satellite layer — see §10).
 
 Visual calibration notes (so I don't re-derive them): the Milky Way map is decoded to linear
 light, so `uIntensity` 0.05 ≈ a faint band and 0.3 is vivid — the UI slider (0–1) maps onto
 0–0.3. Star size/alpha curves live in `stars.ts` (`magToSize`, `magToAlpha`). Cloud opacity
 0.42 was Jack's "very subtle". Orbit drag speed factor 0.55 (was 1.3 — "too quick").
+Satellites (Stage 4, after Jack's first look): **no white in the satellite palette** — stars
+are white and the two must stay tellable apart (payload `#7fdbe8`, R/B `#f4b860`, debris
+`#a99ccf`, unknown `#ee8fc6`); point size scales by view depth `(17000/depth)^0.6` clamped
+0.6–4× ("too small when I zoom in"); base sizes 3.4/3.4/2.5/3.0 px were "a good size at
+15,000 km". Milky Way map regenerated 8192×4096, σ 7→5 texels (Jack: the 4096/σ7 map was
+"very poor resolution") — **his verdict on the new one is pending; if still poor, default it
+off or drop it.** Jack's machine, measured: 240 fps with the layer, 4.8 MB in 158 ms, parse
+10 ms, worker init 62 ms, 6.9 ms per full-catalogue SGP4 tick.
 
 ---
 
@@ -89,6 +97,12 @@ Working principles (agreed 2026-09-11):
 - **Catalog numbers will exceed 99,999.** Use OMM JSON internally, not TLE text.
 - **Time:** UTC everywhere. SGP4 outputs TEME; TEME → Earth-fixed via GMST. Render the scene
   in the inertial frame and rotate the Earth mesh by sidereal time.
+- **JS `Date` truncates CelesTrak's microsecond epochs to milliseconds** (satellite.js
+  `json2satrec` goes through `Date`): ≤ 0.5 ms → ≤ 4 m along-track. Fine for the globe; parse
+  the fraction ourselves before any precision feature.
+- **Constellation shells pile up at their inclination latitude** (dwell at the turning
+  point): 5,134 Starlinks at 53°, 3,620 at 43° → visible bands at 3,600×. Real, not a bug;
+  parallax (550 km up) shifts them poleward from the viewer.
 - Catalog scale (2026-09-10): 35,090 objects on orbit; 20,075 payloads; 15,015 debris/rocket
   bodies; ~16k active; Starlink ~11,100 operational.
 
@@ -104,7 +118,20 @@ Cloudflare Pages (static Svelte app) ──► browser ◄───────�
 
 Until we move to the cloud, "R2" is `data/orbits/latest/`, served at `/data/orbits/` by a Vite
 middleware (`web/vite.config.ts`) with production cache semantics: manifest `no-cache`,
-`gp-<version>.json` immutable. The snapshot is column-oriented JSON: 17 OMM fields verbatim
+`gp-<version>.json` immutable.
+
+**Browser side (implemented Stage 4, verified):** `loadOrbitSnapshot` (manifest → gp file,
+streamed) → `SatelliteCatalog` (per-object Uint8 codes, counts, NORAD map, filter mask) →
+`PropagationEngine` owns ONE module worker (`propagation.worker.ts`, satellite.js 7 pure JS —
+measured 7–10 ms for all 19,247 objects; WASM 5 ms but its glue embeds the binary as a raw
+byte-string, so not used; pthreads slower + needs COOP/COEP) → `SatelliteLayer` (Three
+`Points`, vertex shader extrapolates `p = p0 + v·dt + ½a·dt²`, a = −μp/|p|³; CPU picking with
+the same formula; `OrbitPath` one revolution, phase-fading). Tick cadence: `1000/rate` ms
+clamped 33–1000 ms, one in flight, requests aimed at the display-interval midpoint
+(`now + rate × (rtt + interval/2)`); jump tolerance `max(1.5 s sim, rate × 60 ms)` (a fixed
+1.5 s tolerance re-ticked spuriously at 3,600× — Jack saw 36 Hz). Buffers transfer
+worker→main→worker (recycled). Page polls the manifest every 10 min + on tab focus and
+hot-swaps the layer (selection kept by NORAD). Worker emits scene-frame (x, z, −y) km. The snapshot is column-oriented JSON: 17 OMM fields verbatim
 (EPOCH as CelesTrak's ISO string — feed straight to satellite.js `json2satrec`), 8 derived
 (PERIOD_MIN, SEMI_MAJOR_AXIS_KM, APOGEE_KM, PERIGEE_KM, REGIME, EPOCH_AGE_DAYS, FLAGS, GROUPS),
 7 SATCAT (OBJECT_TYPE, OPS_STATUS_CODE, OWNER, LAUNCH_DATE, LAUNCH_SITE, DECAY_DATE, RCS).
@@ -130,14 +157,18 @@ atmospheric-perspective/            (folder is literally "Satellite Platform" on
   .claude/launch.json               dev-server launch config (node.exe, absolute paths)
   web/                              Svelte 5 + Vite 8 + TS 5.9 + Three r186
     public/textures/earth/          day-{2048,4096,8192}, night-{2048,8192}, clouds-{2048,4096} .webp
-    public/textures/sky/            milky-way-glow-4096.webp (202 KB, from Tycho-2)
+    public/textures/sky/            milky-way-glow-8192.webp (1.19 MB, from Tycho-2, σ 5 texels)
     public/data/sky/                stars-hyg.bin (Int16×4 per star, 934 KB) + stars-hyg.json (meta, names)
-    src/lib/astro/                  time.ts (JD, GMST), sun.ts, frames.ts (WGS84, ECI↔scene)
-    src/lib/globe/                  Globe.ts (loop, scene graph), earth.ts, clouds.ts, atmosphere.ts,
-                                    stars.ts, milkyWay.ts, sun.ts, graticule.ts — Three only, no Svelte
-    src/lib/state/                  clock / settings / status (.svelte.ts, runes classes)
-    src/ui/                         GlobeCanvas (the one Svelte↔Three bridge), TopBar,
-                                    TimeControls, LayersPanel, StatusBar
+    src/lib/astro/                  time.ts (JD, GMST), sun.ts, frames.ts (WGS84, ECI↔scene, ECI→ECEF→geodetic)
+    src/lib/orbits/                 loadOrbitSnapshot.ts, SatelliteCatalog.ts, propagation.worker.ts,
+                                    PropagationEngine.ts, satcatCodes.ts — plain data + worker, no Three/Svelte
+    src/lib/globe/                  Globe.ts (loop, scene graph, setSatellites/pickSatellite), earth.ts, clouds.ts,
+                                    atmosphere.ts, stars.ts, milkyWay.ts, sun.ts, graticule.ts,
+                                    satellites.ts (SatelliteLayer), orbitPath.ts — Three only, no Svelte
+    src/lib/state/                  clock / settings / status / catalog (.svelte.ts, runes classes)
+    src/ui/                         GlobeCanvas (the one Svelte↔Three bridge; loads satellites, pointer
+                                    picking, hot-swap poll), TopBar, TimeControls, LayersPanel, StatusBar,
+                                    ObjectCard, HoverLabel
   pipeline/                         uv project (pyproject.toml, uv.lock, .venv ignored)
     ap_pipeline/paths.py            ROOT / RAW / WEB_PUBLIC and output folders
     ap_pipeline/textures/build_earth_textures_from_nasa.py
@@ -158,8 +189,10 @@ atmospheric-perspective/            (folder is literally "Satellite Platform" on
   data/logs/orbits.log
   .github/workflows/                added when we move the pipeline to Actions
 ```
-Dependency direction is strict: `ui → state → globe → astro`. Satellites go under the
-`world` group (ECI), never under `earthGroup`.
+Dependency direction is strict: `ui → state → globe → astro`, with `orbits` beside `astro`
+at the bottom (globe and state import it; it imports nothing of ours). satellite.js is
+imported only in the worker. Satellites live under the `world` group (ECI), never under
+`earthGroup`. `vite.config.ts` sets `worker.format = 'es'`.
 
 **Naming rule (Jack, 2026-09-11):** file and module names must say what they do —
 `build_star_catalog_from_hyg.py`, not `build_stars.py`. Applies to pipeline modules, data
@@ -184,8 +217,15 @@ files (`stars-hyg.bin`, `milky-way-glow-4096.webp`) and future workers/routes.
 - Working directory: `C:\Users\Jack\Downloads\reboot\Personal\Satellite Platform`
 - Git repo initialised on `main` (2026-09-11). Commit only when Jack says so.
 - **The Claude Browser pane pauses `requestAnimationFrame` when not displayed**, so fps read
-  there is meaningless (1–4). Use screenshots to check rendering; ask Jack for real fps.
-  Dev-only handle: `window.__globe` exposes the Globe instance for console inspection.
+  there is meaningless (1–4), and anything that needs the frame loop (worker ticks, "first
+  frame" timings) stalls between my tool calls — batch a screenshot with the actions that
+  need the loop, and ask Jack for real numbers. Clicks in the pane use the *screenshot*
+  coordinate frame (800×450) even when the viewport is emulated larger — scale accordingly.
+  Dev-only handles: `window.__globe` (Globe) and `window.__state` ({catalog, settings,
+  clock, status}). Don't JSON-dump the engine or layer — they hold megabytes of buffers.
+- **Bash heredocs with large Python/TS bodies sometimes fail to parse in this harness**
+  ("unexpected EOF while looking for matching quote"); write the script with the Write tool
+  and run the file instead.
 - Dev server: `preview_start` with name `web` → http://localhost:5173. **The app stops this
   server when its Browser-pane tab closes** (happened 2026-09-11; Jack found localhost down).
   Before telling Jack to look at localhost, verify with `curl -s -o /dev/null -w "%{http_code}"
@@ -273,10 +313,15 @@ All three document types (plan, briefs, journal) use one visual family so they r
 | 1 | Framework: local site, globe, night sky, first UI | 2026-09-11 | `docs/briefs/01-framework.html` · https://claude.ai/code/artifact/341aff22-9767-47b6-ba8f-4c25eda26706 | Part 1 — The Globe |
 | 2 | Globe polish: 8k textures, clouds, Sun, HYG stars, Milky Way, controls | 2026-09-11 | `docs/briefs/02-globe-polish.html` · https://claude.ai/code/artifact/5bda8a5d-9661-4d3d-9c9c-2ef8edb6196d | Part 1 — The Globe |
 | 3 | Orbit pipeline: CelesTrak fetch discipline, sgp4 validation, snapshot, archive, hourly schedule | 2026-09-11 | `docs/briefs/03-orbit-pipeline.html` · https://claude.ai/code/artifact/41f64269-6dc4-4b45-9839-fe02ce9e2b54 | pending Jack's yes (would be Part 2 — The Orbit Pipeline) |
+| 4 | Satellite layer: worker SGP4, GPU points, hover/select/orbit/card, filters, hot-swap | 2026-09-11 | `docs/briefs/04-satellite-layer.html` · https://claude.ai/code/artifact/65925fba-5555-4a1e-a97f-49754d13c95b | pending Jack's yes (would be Part 3 — The Satellite Layer) |
 
-Commits: Stage 1 `7a3e84d`, Stage 2 `f16d9b8`, journal `d097609`. Jack said "yes commit" at the end of Stage 1 → **commit at the
-end of every stage** (one commit per stage, message "Stage N: <name>"); still never push
-without being asked.
+Commits: Stage 1 `7a3e84d`, Stage 2 `f16d9b8`, journal `d097609`, Stage 3 `a0ba44a`, Stage 4
+(see git log). Jack said "yes commit" at the end of Stage 1 → **commit at the end of every
+stage** (one commit per stage, message "Stage N: <name>"); still never push without being asked.
+
+Open with Jack after Stage 4: journal Parts 2 and 3 not yet approved; GitHub URL still
+pending; Milky Way verdict; Space-Track — he has an account, needs the ODR before the public
+snapshot can carry Space-Track data; credentials go in git-ignored `pipeline/.env`, never chat.
 
 Journal: `docs/journal/atmospheric-perspective-journal.html` ·
 https://claude.ai/code/artifact/52b246d3-75b9-42f9-88e2-5dfd3fb9de1e (redeploy this same file

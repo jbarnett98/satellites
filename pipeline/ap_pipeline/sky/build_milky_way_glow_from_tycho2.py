@@ -9,7 +9,7 @@ surface brightness, not count), smoothed, tone-mapped, and written as a small RG
 site drapes over the celestial sphere underneath the plotted stars.
 
 Input : data/raw/tycho2/tyc2.dat.00.gz … tyc2.dat.19.gz   (CDS I/259, 2,539,913 stars)
-Output: web/public/textures/sky/milky-way-glow-4096.webp   (equirectangular RA × Dec,
+Output: web/public/textures/sky/milky-way-glow-<width>.webp  (equirectangular RA × Dec,
         RA 0° at the left edge increasing rightward, Dec +90° at the top)
 
 Run from pipeline/:  uv run python -m ap_pipeline.sky.build_milky_way_glow_from_tycho2
@@ -27,14 +27,15 @@ from PIL import Image
 from ap_pipeline.paths import RAW, SKY_TEXTURES, ensure_dirs, rel
 
 SRC_DIR = RAW / "tycho2"
-OUT = SKY_TEXTURES / "milky-way-glow-4096.webp"
 
-WIDTH, HEIGHT = 4096, 2048
+# Defaults; --width and --sigma override them (Stage 4: 8192 / 2.5 replaced 4096 / 7.0 after the
+# 4096 map read as blotches at 1:1 on a 1920-px screen — 40° of sky is only 455 texels there).
+WIDTH, HEIGHT = 8192, 4096
 BRIGHT_LIMIT = 8.0   # stars brighter than this are plotted individually by the site — leave them out
 FLUX_CAP_MAG = 10.0  # a star brighter than this counts as if it were V=10: stops single
                      # stars making blobs, so the map traces the *density* of faint stars,
                      # which is what the unaided eye actually sees as the Milky Way
-BLUR_SIGMA_PX = 7.0  # smooths 2.5M points into a continuous glow (≈0.6° at this map size)
+BLUR_SIGMA_PX = 2.5  # smooths 2.5M points into a glow while keeping the band's real structure
 GAMMA = 0.85         # lifts the faint wings of the band without flattening the core
 
 # B−V → linear RGB, the same hand-fit black-body ramp the browser uses for plotted stars.
@@ -133,8 +134,8 @@ def gaussian_blur_wrapped(img: np.ndarray, sigma: float) -> np.ndarray:
     return np.maximum(out, 0.0)
 
 
-def smooth_and_tonemap(img: np.ndarray) -> Image.Image:
-    out = gaussian_blur_wrapped(img, BLUR_SIGMA_PX)
+def smooth_and_tonemap(img: np.ndarray, sigma: float) -> Image.Image:
+    out = gaussian_blur_wrapped(img, sigma)
 
     lum = out.mean(axis=2)
     floor = np.percentile(lum, 55)
@@ -147,18 +148,29 @@ def smooth_and_tonemap(img: np.ndarray) -> Image.Image:
     return Image.fromarray((mapped * 255.0 + 0.5).astype(np.uint8), mode="RGB")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    global WIDTH, HEIGHT
+    ap = argparse.ArgumentParser(description="Milky Way glow map from Tycho-2.")
+    ap.add_argument("--width", type=int, default=WIDTH, help="map width in texels (height is half)")
+    ap.add_argument("--sigma", type=float, default=BLUR_SIGMA_PX, help="Gaussian blur, texels")
+    ap.add_argument("--quality", type=int, default=86, help="WebP quality")
+    args = ap.parse_args(argv)
+    WIDTH, HEIGHT = args.width, args.width // 2
+    out = SKY_TEXTURES / f"milky-way-glow-{WIDTH}.webp"
+
     ensure_dirs()
     t0 = time.perf_counter()
     print("reading Tycho-2:")
     ra, dec, v, bv = read_tycho2()
     print(f"  {len(ra):,} stars read in {time.perf_counter() - t0:.1f} s")
-    print("accumulating:")
+    print(f"accumulating at {WIDTH}×{HEIGHT}:")
     img = accumulate(ra, dec, v, bv)
-    print("smoothing and tone-mapping:")
-    pic = smooth_and_tonemap(img)
-    pic.save(OUT, "WEBP", quality=88, method=6)
-    print(f"→ {rel(OUT)}  {OUT.stat().st_size / 1024:.0f} KB  ({WIDTH}×{HEIGHT})  total {time.perf_counter() - t0:.1f} s")
+    print(f"smoothing (σ = {args.sigma} texels) and tone-mapping:")
+    pic = smooth_and_tonemap(img, args.sigma)
+    pic.save(out, "WEBP", quality=args.quality, method=6)
+    print(f"→ {rel(out)}  {out.stat().st_size / 1024:.0f} KB  ({WIDTH}×{HEIGHT})  total {time.perf_counter() - t0:.1f} s")
     return 0
 
 

@@ -4,14 +4,18 @@ A real-time, browser-rendered globe of everything in Earth orbit, with the data 
 behind it. Static-first: the browser does the orbital mechanics; a small pipeline refreshes
 the data; hosting costs ~nothing.
 
+Today: 19,247 tracked objects (every active satellite plus three debris clouds), propagated
+with SGP4 in a Web Worker and drawn as GPU points that the vertex shader carries between
+ticks. Hover names an object; click for its orbit and catalogue record.
+
 Project plan and working brief: `CLAUDE.md`. Stage briefs: `docs/briefs/`.
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `web/` | The site — Svelte 5 + Vite + TypeScript + Three.js |
-| `pipeline/` | Python data pipeline (`uv` project; NumPy + Pillow) |
+| `web/` | The site — Svelte 5 + Vite + TypeScript + Three.js + satellite.js (worker) |
+| `pipeline/` | Python data pipeline (`uv` project; NumPy + Pillow + httpx + sgp4) |
 | `docs/` | Stage briefs, build journal, plan |
 | `data/` | Local raw downloads, orbit snapshots, daily archive, logs (git-ignored) |
 
@@ -32,14 +36,16 @@ site-ready files into `web/public/`.
 ```bash
 npm run textures   # NASA Blue Marble / Black Marble / clouds → web/public/textures/earth/*.webp
 npm run stars      # HYG v4.4 → web/public/data/sky/stars-hyg.{bin,json}
-npm run milkyway   # Tycho-2 (2.5M stars) → web/public/textures/sky/milky-way-glow-4096.webp
+npm run milkyway   # Tycho-2 (2.5M stars) → web/public/textures/sky/milky-way-glow-8192.webp
 ```
 
 ## Orbit data (scheduled)
 
 Element sets come from CelesTrak under its one-download-per-two-hour rule; the pipeline
 paces itself and never lets a browser talk to CelesTrak. Output lands in `data/orbits/latest/`
-(git-ignored) and the dev server serves it at `/data/orbits/`.
+(git-ignored) and the dev server serves it at `/data/orbits/`. The page reads
+`manifest.json`, then the immutable `gp-<version>.json` it names, and re-checks the manifest
+every ten minutes so a new snapshot is swapped in without a reload.
 
 ```bash
 npm run orbits                  # one run: fetch if allowed, validate (sgp4), snapshot, archive
@@ -58,4 +64,5 @@ Requires Node.js ≥ 24, Python ≥ 3.12 (`py` launcher on Windows) and `uv`.
 - Plotted stars: HYG Database v4.4 (David Nash, astronexus.com) — CC BY-SA 4.0.
 - Milky Way glow: summed light of the Tycho-2 catalogue (Høg et al. 2000, CDS I/259).
 - Orbital element sets and satellite catalogue: CelesTrak (celestrak.org), GP data derived from 18 SDS / Space-Track.
+- Propagation: SGP4/SDP4 via satellite.js (MIT) in the browser; the `sgp4` package (Brandon Rhodes) in the pipeline.
 - Earth figure: WGS84.

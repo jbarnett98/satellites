@@ -48,7 +48,7 @@ const fragmentShader = /* glsl */ `
 `;
 
 export async function loadMilkyWayMap(): Promise<Texture> {
-  const t = await new TextureLoader().loadAsync('/textures/sky/milky-way-glow-4096.webp');
+  const t = await new TextureLoader().loadAsync('/textures/sky/milky-way-glow-8192.webp');
   t.colorSpace = SRGBColorSpace;
   t.wrapS = RepeatWrapping;
   return t;

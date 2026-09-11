@@ -13,18 +13,20 @@
  *         ├─ Atmosphere shell (back-face, additive)
  *         └─ Graticule
  *
+ *      └─ satelliteLayer  (attached once the orbit snapshot has loaded — ECI, so never under earthGroup)
+ *         ├─ Points: one vertex per catalogued object, extrapolated in the vertex shader
+ *         └─ Orbit line of the selected object
+ *
  *   skyScene            rendered first with a camera that copies only the main camera's rotation
  *   └─ skyRoot          rotation.y follows `world` so the sky and the Earth stay consistent
  *      ├─ MilkyWay dome (additive, under everything)
  *      ├─ StarField (119k points)
  *      └─ Sun sprite (true angular size, occluded by the Earth in the world pass)
- *
- * Satellites will later be added as children of `world` (they live in ECI), not earthGroup.
  */
 
 import { Group, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { eciToScene, sceneEarthFixedToLatLon, WGS84_A_KM, WGS84_B_KM } from '../astro/frames';
+import { ecefToGeodetic, eciToEcef, eciToScene, sceneEarthFixedToLatLon, sceneToEci, WGS84_A_KM, WGS84_B_KM } from '../astro/frames';
 import { gmst, julianDate } from '../astro/time';
 import { sunState, type SunState } from '../astro/sun';
 import { Atmosphere } from './atmosphere';
@@ -34,9 +36,21 @@ import { Graticule } from './graticule';
 import { loadMilkyWayMap, MilkyWay } from './milkyWay';
 import { loadStarCatalog, StarField } from './stars';
 import { SunSprite } from './sun';
+import type { SatelliteLayer, SatelliteLayerStatus } from './satellites';
 
 export type FrameMode = 'eci' | 'ecef';
 export type LayerName = 'atmosphere' | 'nightLights' | 'clouds' | 'stars' | 'milkyWay' | 'graticule' | 'dayNight';
+
+/** Live numbers for the selected satellite, computed from the same extrapolation the shader draws. */
+export interface SelectedReadout {
+  index: number;
+  latDeg: number;
+  lonDeg: number;
+  /** Height above the WGS84 ellipsoid, km. */
+  altitudeKm: number;
+  speedKmS: number;
+  inShadow: boolean;
+}
 
 export interface GlobeStatus {
   fps: number;
@@ -48,11 +62,15 @@ export interface GlobeStatus {
   cameraLonDeg: number;
   starCount: number;
   textureTier: TextureTier;
+  satellites: SatelliteLayerStatus | null;
+  selected: SelectedReadout | null;
 }
 
 export interface GlobeOptions {
   /** Returns the simulation time (Unix ms) for this frame. Called once per frame. */
   timeSource: () => number;
+  /** Returns the current time rate (0 = paused, 1 = real time, …). Drives propagation cadence. */
+  rateSource: () => number;
   onStatus?: (status: GlobeStatus) => void;
   onProgress?: (label: string) => void;
   onReady?: () => void;
@@ -81,6 +99,7 @@ export class Globe {
   private stars?: StarField;
   private milkyWay?: MilkyWay;
   private sun = new SunSprite();
+  private satellites: SatelliteLayer | null = null;
 
   private frame: FrameMode = 'eci';
   private worldRotation = 0;
@@ -109,6 +128,8 @@ export class Globe {
   private readonly sunEciScene = new Vector3();
   private readonly sunScene = new Vector3();
   private readonly camEarthFixed = new Vector3();
+  private readonly selPos = new Vector3();
+  private readonly selVel = new Vector3();
 
   constructor(canvas: HTMLCanvasElement, opts: GlobeOptions) {
     this.opts = opts;
@@ -206,6 +227,7 @@ export class Globe {
     this.stars?.dispose();
     this.milkyWay?.dispose();
     this.sun.dispose();
+    this.satellites?.dispose();
     this.renderer.dispose();
   }
 
@@ -219,6 +241,36 @@ export class Globe {
     this.skyCamera.aspect = w / h;
     this.skyCamera.updateProjectionMatrix();
     this.stars?.setPixelRatio(this.renderer.getPixelRatio());
+    this.satellites?.setPixelRatio(this.renderer.getPixelRatio());
+  }
+
+  // ---------------------------------------------------------------- satellites
+
+  /** Attach (or replace, or remove with null) the satellite layer. The globe does not own it. */
+  setSatellites(layer: SatelliteLayer | null): void {
+    if (this.satellites) this.world.remove(this.satellites.root);
+    this.satellites = layer;
+    if (layer) {
+      layer.setPixelRatio(this.renderer.getPixelRatio());
+      this.world.add(layer.root);
+    }
+  }
+
+  get satelliteLayer(): SatelliteLayer | null {
+    return this.satellites;
+  }
+
+  /** Index of the satellite under a pointer position (CSS px within the canvas), or −1. */
+  pickSatellite(clientX: number, clientY: number, radiusPx = 9): number {
+    const layer = this.satellites;
+    if (!layer) return -1;
+    const canvas = this.renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const ndcX = ((clientX - rect.left) / w) * 2 - 1;
+    const ndcY = -(((clientY - rect.top) / h) * 2 - 1);
+    return layer.pick(ndcX, ndcY, this.camera, w, h, this.opts.timeSource(), radiusPx);
   }
 
   // ---------------------------------------------------------------- controls from UI
@@ -261,6 +313,7 @@ export class Globe {
   private readonly tick = (): void => {
     const nowReal = performance.now();
     const simMs = this.opts.timeSource();
+    const rate = this.opts.rateSource();
     const jd = julianDate(simMs);
     const theta = gmst(jd);
     const sun = sunState(jd);
@@ -292,6 +345,7 @@ export class Globe {
     this.earth?.update(this.sunScene, this.camera.position, drift);
     this.clouds?.update(this.sunScene, this.camera.position, drift);
     this.atmosphere.update(this.sunScene, this.camera.position);
+    this.satellites?.update(simMs, rate, this.sunScene);
 
     // Render: sky first (rotation-only camera), then the world on a fresh depth buffer.
     this.renderer.clear();
@@ -321,9 +375,28 @@ export class Globe {
         cameraLonDeg: geo.lonDeg,
         starCount: this.stars?.count ?? 0,
         textureTier: this.textureTier,
+        satellites: this.satellites?.status(simMs) ?? null,
+        selected: this.selectedReadout(simMs, theta, sun),
       });
     }
   };
+
+  /** Where the selected satellite is right now, in terms a person reads: lat, lon, height, speed. */
+  private selectedReadout(simMs: number, theta: number, sun: SunState): SelectedReadout | null {
+    const layer = this.satellites;
+    if (!layer || layer.selectedIndex < 0) return null;
+    const i = layer.selectedIndex;
+    if (!layer.sample(i, simMs, this.selPos, this.selVel)) return null;
+    const [x, y, z] = sceneToEci(this.selPos);
+    const [ex, ey, ez] = eciToEcef(x, y, z, theta);
+    const geo = ecefToGeodetic(ex, ey, ez);
+    const along = x * sun.dir[0] + y * sun.dir[1] + z * sun.dir[2];
+    const px = x - along * sun.dir[0];
+    const py = y - along * sun.dir[1];
+    const pz = z - along * sun.dir[2];
+    const inShadow = along < 0 && Math.hypot(px, py, pz) < WGS84_A_KM;
+    return { index: i, latDeg: geo.latDeg, lonDeg: geo.lonDeg, altitudeKm: geo.heightKm, speedKmS: this.selVel.length(), inShadow };
+  }
 
   // ---------------------------------------------------------------- helpers
 

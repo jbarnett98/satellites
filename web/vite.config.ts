@@ -42,6 +42,11 @@ function serveOrbitData(): Plugin {
 
 export default defineConfig({
   plugins: [svelte(), serveOrbitData()],
+  // Module workers, so the propagation worker can code-split like the page does (and the
+  // satellite.js WASM runtimes it never asks for stay out of its bundle).
+  worker: {
+    format: 'es',
+  },
   server: {
     port: 5173,
     strictPort: true,
