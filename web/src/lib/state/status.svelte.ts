@@ -13,6 +13,8 @@ class Status {
   cameraLatDeg = $state(0);
   cameraLonDeg = $state(0);
   starCount = $state(0);
+  /** '2k' while the first-paint textures are up, '8k' once the full set has swapped in. */
+  textureTier = $state<'2k' | '8k'>('2k');
 }
 
 export const status = new Status();

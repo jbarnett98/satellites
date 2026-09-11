@@ -14,10 +14,10 @@
     <dt>GMST</dt>
     <dd>{formatSidereal(status.gmstRad)}</dd>
     <dt>Render</dt>
-    <dd>{status.fps.toFixed(0)} fps · {status.starCount.toLocaleString('en-GB')} stars</dd>
+    <dd>{status.fps.toFixed(0)} fps · {status.textureTier} · {status.starCount.toLocaleString('en-GB')} stars</dd>
   </dl>
   <p class="credits">
-    Imagery NASA Blue Marble &amp; Black Marble · Stars Yale BSC5 · Figure WGS84
+    NASA Blue Marble · Black Marble · cloud composite &nbsp;|&nbsp; stars HYG 4.4 (CC BY-SA) &nbsp;|&nbsp; Milky Way summed from Tycho-2 (CDS) &nbsp;|&nbsp; WGS84
   </p>
 </section>
 
@@ -25,6 +25,7 @@
   .status {
     padding: 10px 12px;
     min-width: 300px;
+    max-width: 380px;
   }
 
   .credits {
@@ -33,6 +34,7 @@
     border-top: 1px solid var(--panel-border);
     color: var(--faint);
     font-size: 11px;
+    line-height: 1.5;
     letter-spacing: 0.02em;
   }
 </style>

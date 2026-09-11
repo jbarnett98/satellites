@@ -12,15 +12,29 @@
       <span class="label">{LAYER_LABELS[name].label}</span>
       <span class="hint">{LAYER_LABELS[name].hint}</span>
     </label>
+
+    {#if name === 'stars'}
+      <label class="slider" class:disabled={!settings.layers.stars}>
+        <span class="eyebrow">Brightness</span>
+        <input type="range" min="0.4" max="2.2" step="0.05" bind:value={settings.starBrightness} disabled={!settings.layers.stars} />
+        <span class="mono val">{settings.starBrightness.toFixed(2)}×</span>
+      </label>
+    {:else if name === 'milkyWay'}
+      <label class="slider" class:disabled={!settings.layers.milkyWay}>
+        <span class="eyebrow">Intensity</span>
+        <input type="range" min="0" max="1" step="0.05" bind:value={settings.milkyWayIntensity} disabled={!settings.layers.milkyWay} />
+        <span class="mono val">{Math.round(settings.milkyWayIntensity * 100)}%</span>
+      </label>
+    {/if}
   {/each}
 </section>
 
 <style>
   .layers {
     display: grid;
-    gap: 6px;
+    gap: 4px;
     padding: 10px 12px 12px;
-    width: 300px;
+    width: 310px;
     background: var(--panel-strong);
   }
 
@@ -57,5 +71,29 @@
     grid-area: hint;
     color: var(--muted);
     font-size: 12px;
+  }
+
+  .slider {
+    display: grid;
+    grid-template-columns: 72px 1fr 44px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 0 6px 28px;
+  }
+
+  .slider.disabled {
+    opacity: 0.4;
+  }
+
+  .slider input[type='range'] {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+
+  .val {
+    font-size: 11.5px;
+    text-align: right;
+    color: var(--muted);
   }
 </style>

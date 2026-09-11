@@ -1,0 +1,13 @@
+[project]
+name = "atmospheric-perspective-pipeline"
+version = "0.2.0"
+description = "Turns raw catalogues and imagery in data/raw into the small static files the site loads from web/public."
+requires-python = ">=3.12"
+dependencies = [
+  "numpy>=2.0",
+  "pillow>=11.0",
+]
+
+[tool.uv]
+# Plain scripts in a package folder; nothing to build or install.
+package = false

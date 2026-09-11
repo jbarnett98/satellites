@@ -5,8 +5,8 @@ web/.vite/
 *.local
 
 # data snapshots and raw downloads never go in git (they go to data/ locally, R2 later)
-data/
-!data/.gitkeep
+/data/*
+!/data/.gitkeep
 
 # python
 __pycache__/

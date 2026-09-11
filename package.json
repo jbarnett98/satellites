@@ -8,6 +8,8 @@
     "build": "npm --prefix web run build",
     "preview": "npm --prefix web run preview",
     "check": "npm --prefix web run check",
-    "stars": "py pipeline/scripts/build_stars.py"
+    "textures": "uv run --directory pipeline python -m ap_pipeline.textures.build_earth_textures_from_nasa",
+    "stars": "uv run --directory pipeline python -m ap_pipeline.sky.build_star_catalog_from_hyg",
+    "milkyway": "uv run --directory pipeline python -m ap_pipeline.sky.build_milky_way_glow_from_tycho2"
   }
 }

@@ -4,7 +4,12 @@ This file is my standing brief. It is loaded into context every session in this 
 Read it before doing anything. If something here conflicts with what Jack says in chat,
 Jack wins — then update this file so it stays true.
 
-Last updated: 2026-09-11 (Stage 1 complete: framework, globe, night sky, first UI).
+Last updated: 2026-09-11 (Stage 2 complete: globe polish — see §10).
+
+Visual calibration notes (so I don't re-derive them): the Milky Way map is decoded to linear
+light, so `uIntensity` 0.05 ≈ a faint band and 0.3 is vivid — the UI slider (0–1) maps onto
+0–0.3. Star size/alpha curves live in `stars.ts` (`magToSize`, `magToAlpha`). Cloud opacity
+0.42 was Jack's "very subtle". Orbit drag speed factor 0.55 (was 1.3 — "too quick").
 
 ---
 
@@ -103,26 +108,37 @@ Until we move to the cloud, "R2" is a local `data/` output folder and the dev se
 
 ```
 atmospheric-perspective/            (folder is literally "Satellite Platform" on disk)
-  CLAUDE.md · README.md · package.json (root scripts delegate to web/) · .gitignore
+  CLAUDE.md · README.md · package.json (root scripts delegate to web/ and pipeline/)
+  .gitignore · .gitattributes (LF everywhere; images/bin binary)
   .claude/launch.json               dev-server launch config (node.exe, absolute paths)
   web/                              Svelte 5 + Vite 8 + TS 5.9 + Three r186
-    public/textures/                earth-day-blue-marble-5400.jpg, earth-night-black-marble-3600.jpg
-    public/data/stars.json          built by the pipeline (9,096 stars, 287 KB)
+    public/textures/earth/          day-{2048,4096,8192}, night-{2048,8192}, clouds-{2048,4096} .webp
+    public/textures/sky/            milky-way-glow-4096.webp (202 KB, from Tycho-2)
+    public/data/sky/                stars-hyg.bin (Int16×4 per star, 934 KB) + stars-hyg.json (meta, names)
     src/lib/astro/                  time.ts (JD, GMST), sun.ts, frames.ts (WGS84, ECI↔scene)
-    src/lib/globe/                  Globe.ts (loop, scene graph), earth.ts, atmosphere.ts,
-                                    stars.ts, graticule.ts — Three only, no Svelte
+    src/lib/globe/                  Globe.ts (loop, scene graph), earth.ts, clouds.ts, atmosphere.ts,
+                                    stars.ts, milkyWay.ts, sun.ts, graticule.ts — Three only, no Svelte
     src/lib/state/                  clock / settings / status (.svelte.ts, runes classes)
     src/ui/                         GlobeCanvas (the one Svelte↔Three bridge), TopBar,
                                     TimeControls, LayersPanel, StatusBar
-  pipeline/scripts/build_stars.py   BSC5 → stars.json (stdlib only)
+  pipeline/                         uv project (pyproject.toml, uv.lock, .venv ignored)
+    ap_pipeline/paths.py            ROOT / RAW / WEB_PUBLIC and output folders
+    ap_pipeline/textures/build_earth_textures_from_nasa.py
+    ap_pipeline/sky/build_star_catalog_from_hyg.py
+    ap_pipeline/sky/build_milky_way_glow_from_tycho2.py
   docs/briefs/NN-<slug>.html        stage briefs
   docs/journal/                     the build journal (single HTML, grows)
   docs/plan/                        copy of the game plan
-  data/raw/                         downloaded originals (git-ignored)
+  data/raw/                         downloaded originals (git-ignored): NASA 21600×10800 Blue Marble,
+                                    Black Marble 3km, cloud TIFF, hyg_v44.csv.gz, tycho2/ (20 parts)
   .github/workflows/                added when we move the pipeline to Actions
 ```
 Dependency direction is strict: `ui → state → globe → astro`. Satellites go under the
 `world` group (ECI), never under `earthGroup`.
+
+**Naming rule (Jack, 2026-09-11):** file and module names must say what they do —
+`build_star_catalog_from_hyg.py`, not `build_stars.py`. Applies to pipeline modules, data
+files (`stars-hyg.bin`, `milky-way-glow-4096.webp`) and future workers/routes.
 
 ## 7. Environment
 
@@ -133,7 +149,13 @@ Dependency direction is strict: `ui → state → globe → astro`. Satellites g
   `$env:Path += ";C:\Program Files\nodejs"` (PowerShell) or
   `export PATH="$PATH:/c/Program Files/nodejs"` (Bash). `.claude/launch.json` therefore
   calls `node.exe` with absolute paths rather than `npm`.
-- `uv` not installed yet (pipeline is stdlib-only so far). GPU: NVIDIA RTX 5070.
+- **uv 0.12.13** installed 2026-09-11 via winget at
+  `C:\Users\Jack\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe\uv.exe`
+  (same PATH caveat as Node). Pipeline venv: `pipeline/.venv` (numpy 2.5, pillow 12.3 on Python 3.14).
+  Run pipeline modules with `uv run --directory pipeline python -m ap_pipeline.<pkg>.<module>`.
+- GPU: NVIDIA RTX 5070; Jack measured **240 fps** for the Stage 1 globe in his own browser.
+- `gh` (GitHub CLI) is **not** installed; Jack creates GitHub repos himself.
+- Git identity is set repo-locally (Jack Barnett / barnettjack29@gmail.com).
 - Working directory: `C:\Users\Jack\Downloads\reboot\Personal\Satellite Platform`
 - Git repo initialised on `main` (2026-09-11). Commit only when Jack says so.
 - **The Claude Browser pane pauses `requestAnimationFrame` when not displayed**, so fps read
@@ -212,6 +234,11 @@ All three document types (plan, briefs, journal) use one visual family so they r
 |---|---|---|---|---|
 | 0 | Game plan (pre-build) | 2026-09-11 | Game Plan artifact (link in §1) | — |
 | 1 | Framework: local site, globe, night sky, first UI | 2026-09-11 | `docs/briefs/01-framework.html` · https://claude.ai/code/artifact/341aff22-9767-47b6-ba8f-4c25eda26706 | pending Jack's yes |
+| 2 | Globe polish: 8k textures, clouds, Sun, HYG stars, Milky Way, controls | 2026-09-11 | `docs/briefs/02-globe-polish.html` · https://claude.ai/code/artifact/5bda8a5d-9661-4d3d-9c9c-2ef8edb6196d | pending Jack's yes |
+
+Commits: Stage 1 `7a3e84d`. Jack said "yes commit" at the end of Stage 1 → **commit at the
+end of every stage** (one commit per stage, message "Stage N: <name>"); still never push
+without being asked.
 
 Journal artifact URL: *(not yet created)*
 

@@ -27,6 +27,7 @@
         status.cameraLatDeg = s.cameraLatDeg;
         status.cameraLonDeg = s.cameraLonDeg;
         status.starCount = s.starCount;
+        status.textureTier = s.textureTier === 'high' ? '8k' : '2k';
       },
     });
     globe = g;
@@ -56,6 +57,14 @@
     for (const name of Object.keys(settings.layers) as LayerName[]) {
       g.setLayer(name, settings.layers[name]);
     }
+  });
+
+  $effect(() => {
+    globe?.setStarBrightness(settings.starBrightness);
+  });
+
+  $effect(() => {
+    globe?.setMilkyWayIntensity(settings.milkyWayIntensity);
   });
 </script>
 

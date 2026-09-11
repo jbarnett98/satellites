@@ -9,34 +9,34 @@
  *   └─ world            rotation.y = 0 (inertial view)  |  −GMST (Earth-fixed view)
  *      └─ earthGroup    rotation.y = GMST, scale.y = polar/equatorial radius (WGS84)
  *         ├─ Earth mesh (day/night shader)
+ *         ├─ Clouds shell (translucent, drifts slowly)
  *         ├─ Atmosphere shell (back-face, additive)
  *         └─ Graticule
  *
- *   starScene           rendered first with a camera that copies only the main camera's
- *   └─ starRoot         rotation.y follows `world` so the sky and the Earth stay consistent
- *      └─ StarField
+ *   skyScene            rendered first with a camera that copies only the main camera's rotation
+ *   └─ skyRoot          rotation.y follows `world` so the sky and the Earth stay consistent
+ *      ├─ MilkyWay dome (additive, under everything)
+ *      ├─ StarField (119k points)
+ *      └─ Sun sprite (true angular size, occluded by the Earth in the world pass)
  *
  * Satellites will later be added as children of `world` (they live in ECI), not earthGroup.
  */
 
-import {
-  Group,
-  PerspectiveCamera,
-  Scene,
-  Vector3,
-  WebGLRenderer,
-} from 'three';
+import { Group, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { eciToScene, sceneEarthFixedToLatLon, WGS84_A_KM, WGS84_B_KM } from '../astro/frames';
 import { gmst, julianDate } from '../astro/time';
 import { sunState, type SunState } from '../astro/sun';
 import { Atmosphere } from './atmosphere';
-import { Earth, loadEarthTextures } from './earth';
+import { Clouds, cloudOffset, loadCloudTexture } from './clouds';
+import { Earth, loadEarthTextures, type TextureTier } from './earth';
 import { Graticule } from './graticule';
+import { loadMilkyWayMap, MilkyWay } from './milkyWay';
 import { loadStarCatalog, StarField } from './stars';
+import { SunSprite } from './sun';
 
 export type FrameMode = 'eci' | 'ecef';
-export type LayerName = 'atmosphere' | 'nightLights' | 'stars' | 'graticule' | 'dayNight';
+export type LayerName = 'atmosphere' | 'nightLights' | 'clouds' | 'stars' | 'milkyWay' | 'graticule' | 'dayNight';
 
 export interface GlobeStatus {
   fps: number;
@@ -47,6 +47,7 @@ export interface GlobeStatus {
   cameraLatDeg: number;
   cameraLonDeg: number;
   starCount: number;
+  textureTier: TextureTier;
 }
 
 export interface GlobeOptions {
@@ -69,23 +70,34 @@ export class Globe {
   readonly camera: PerspectiveCamera;
   readonly controls: OrbitControls;
 
-  private readonly starScene = new Scene();
-  private readonly starCamera: PerspectiveCamera;
+  private readonly skyScene = new Scene();
+  private readonly skyRoot = new Group();
+  private readonly skyCamera: PerspectiveCamera;
 
   private earth?: Earth;
+  private clouds?: Clouds;
   private atmosphere = new Atmosphere();
   private graticule = new Graticule();
   private stars?: StarField;
+  private milkyWay?: MilkyWay;
+  private sun = new SunSprite();
 
   private frame: FrameMode = 'eci';
   private worldRotation = 0;
+  private textureTier: TextureTier = 'low';
   private readonly layers: Record<LayerName, boolean> = {
     atmosphere: true,
     nightLights: true,
+    clouds: true,
     stars: true,
+    milkyWay: true,
     graticule: false,
     dayNight: true,
   };
+  private starBrightness = 1;
+  private milkyWayIntensity = 0.17;
+  /** Slider 1.0 → this much linear light; keeps the band a glow rather than a fog. */
+  private static readonly MILKY_WAY_MAX = 0.3;
 
   private readonly opts: GlobeOptions;
   private running = false;
@@ -94,6 +106,7 @@ export class Globe {
   private fps = 0;
 
   // scratch
+  private readonly sunEciScene = new Vector3();
   private readonly sunScene = new Vector3();
   private readonly camEarthFixed = new Vector3();
 
@@ -106,13 +119,13 @@ export class Globe {
     this.renderer.autoClear = false;
 
     this.camera = new PerspectiveCamera(40, 1, 20, 600_000);
-    this.starCamera = new PerspectiveCamera(40, 1, 0.1, 100);
+    this.skyCamera = new PerspectiveCamera(40, 1, 0.1, 100);
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.08;
+    this.controls.dampingFactor = 0.06;
     this.controls.enablePan = false;
-    this.controls.zoomSpeed = 0.8;
+    this.controls.zoomSpeed = 0.7;
     this.controls.minDistance = WGS84_A_KM + 250; // never below 250 km altitude
     this.controls.maxDistance = 140_000;
 
@@ -120,6 +133,9 @@ export class Globe {
     this.earthGroup.add(this.atmosphere.mesh, this.graticule.root);
     this.world.add(this.earthGroup);
     this.scene.add(this.world);
+
+    this.skyRoot.add(this.sun.sprite);
+    this.skyScene.add(this.skyRoot);
 
     this.placeInitialCamera();
     this.applyLayers();
@@ -132,22 +148,37 @@ export class Globe {
 
   private async load(): Promise<void> {
     try {
-      const [textures, catalog] = await Promise.all([
-        loadEarthTextures(this.renderer, this.opts.onProgress),
+      // Tier 1: everything needed for a first picture, in parallel.
+      const [lowTex, lowClouds, catalog, milkyWayMap] = await Promise.all([
+        loadEarthTextures(this.renderer, 'low', this.opts.onProgress),
+        loadCloudTexture(this.renderer, 2048),
         (async () => {
-          this.opts.onProgress?.('Loading star catalogue');
+          this.opts.onProgress?.('Loading 119,613 stars');
           return loadStarCatalog();
         })(),
+        loadMilkyWayMap(),
       ]);
 
+      this.milkyWay = new MilkyWay(milkyWayMap);
       this.stars = new StarField(catalog, this.renderer.getPixelRatio());
-      this.starScene.add(this.stars.root);
+      this.skyRoot.add(this.milkyWay.mesh, this.stars.root);
 
-      this.earth = new Earth(textures);
-      this.earthGroup.add(this.earth.mesh);
+      this.clouds = new Clouds(lowClouds);
+      this.earth = new Earth(lowTex, lowClouds);
+      this.earthGroup.add(this.earth.mesh, this.clouds.mesh);
 
       this.applyLayers();
       this.opts.onReady?.();
+
+      // Tier 2: full resolution, swapped in when it arrives.
+      const [highTex, highClouds] = await Promise.all([
+        loadEarthTextures(this.renderer, 'high'),
+        loadCloudTexture(this.renderer, 4096),
+      ]);
+      this.earth.setTextures(highTex);
+      this.clouds.setMap(highClouds);
+      this.earth.setCloudTexture(highClouds);
+      this.textureTier = 'high';
     } catch (err) {
       this.opts.onError?.(err);
     }
@@ -169,9 +200,12 @@ export class Globe {
     this.stop();
     this.controls.dispose();
     this.earth?.dispose();
+    this.clouds?.dispose();
     this.atmosphere.dispose();
     this.graticule.dispose();
     this.stars?.dispose();
+    this.milkyWay?.dispose();
+    this.sun.dispose();
     this.renderer.dispose();
   }
 
@@ -182,8 +216,8 @@ export class Globe {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.starCamera.aspect = w / h;
-    this.starCamera.updateProjectionMatrix();
+    this.skyCamera.aspect = w / h;
+    this.skyCamera.updateProjectionMatrix();
     this.stars?.setPixelRatio(this.renderer.getPixelRatio());
   }
 
@@ -198,12 +232,28 @@ export class Globe {
     this.applyLayers();
   }
 
+  setStarBrightness(b: number): void {
+    this.starBrightness = b;
+    this.stars?.setBrightness(b);
+  }
+
+  /** `v` is the UI slider, 0–1. */
+  setMilkyWayIntensity(v: number): void {
+    this.milkyWayIntensity = v;
+    this.milkyWay?.setIntensity(v * Globe.MILKY_WAY_MAX);
+  }
+
   private applyLayers(): void {
     this.atmosphere.setVisible(this.layers.atmosphere);
     this.graticule.setVisible(this.layers.graticule);
     this.stars?.setVisible(this.layers.stars);
+    this.stars?.setBrightness(this.starBrightness);
+    this.milkyWay?.setVisible(this.layers.milkyWay);
+    this.milkyWay?.setIntensity(this.milkyWayIntensity * Globe.MILKY_WAY_MAX);
+    this.clouds?.setVisible(this.layers.clouds);
     this.earth?.setNightLights(this.layers.nightLights);
     this.earth?.setDayNight(this.layers.dayNight);
+    this.earth?.setCloudShadow(this.layers.clouds);
   }
 
   // ---------------------------------------------------------------- frame loop
@@ -225,26 +275,29 @@ export class Globe {
     }
     this.world.rotation.y = this.worldRotation;
     this.earthGroup.rotation.y = theta;
-    if (this.stars) this.stars.root.rotation.y = this.worldRotation;
+    this.skyRoot.rotation.y = this.worldRotation;
 
-    // Sun direction in scene space (rotate with `world` so shaders see a consistent frame).
-    eciToScene(sun.dir[0], sun.dir[1], sun.dir[2], this.sunScene).applyAxisAngle(Y_AXIS, this.worldRotation);
+    // Sun direction: inertial scene coords for the sky (skyRoot carries the world rotation),
+    // and world-rotated coords for the shaders, which see modelMatrix including `world`.
+    eciToScene(sun.dir[0], sun.dir[1], sun.dir[2], this.sunEciScene);
+    this.sunScene.copy(this.sunEciScene).applyAxisAngle(Y_AXIS, this.worldRotation);
+    this.sun.update(this.sunEciScene);
 
     // Camera: slower orbiting when close to the surface.
     const dist = this.camera.position.length();
-    this.controls.rotateSpeed = Math.min(1, Math.max(0.04, ((dist - WGS84_A_KM) / dist) * 1.3));
+    this.controls.rotateSpeed = Math.min(0.6, Math.max(0.02, ((dist - WGS84_A_KM) / dist) * 0.55));
     this.controls.update();
 
-    this.earth?.update(this.sunScene, this.camera.position);
+    const drift = cloudOffset(simMs);
+    this.earth?.update(this.sunScene, this.camera.position, drift);
+    this.clouds?.update(this.sunScene, this.camera.position, drift);
     this.atmosphere.update(this.sunScene, this.camera.position);
 
     // Render: sky first (rotation-only camera), then the world on a fresh depth buffer.
     this.renderer.clear();
-    if (this.stars) {
-      this.starCamera.quaternion.copy(this.camera.quaternion);
-      this.renderer.render(this.starScene, this.starCamera);
-      this.renderer.clearDepth();
-    }
+    this.skyCamera.quaternion.copy(this.camera.quaternion);
+    this.renderer.render(this.skyScene, this.skyCamera);
+    this.renderer.clearDepth();
     this.renderer.render(this.scene, this.camera);
 
     // Status, throttled.
@@ -267,6 +320,7 @@ export class Globe {
         cameraLatDeg: geo.latDeg,
         cameraLonDeg: geo.lonDeg,
         starCount: this.stars?.count ?? 0,
+        textureTier: this.textureTier,
       });
     }
   };
