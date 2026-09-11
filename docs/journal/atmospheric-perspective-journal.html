@@ -99,8 +99,8 @@
     <h1>Atmospheric Perspective: how it was built</h1>
     <p class="lede">A continuous account of building a real-time globe of everything in Earth orbit — what we made, how each piece works, what we chose and what we chose against, and what we measured. One part per component. Written as we go.</p>
     <div class="telemetry" aria-label="Journal state">
-      <div><span>PARTS </span><b>1</b> <span>· LAST UPDATED </span><b>11 Sep 2026</b></div>
-      <div><span>COMMITS COVERED </span><b>7a3e84d · f16d9b8</b></div>
+      <div><span>PARTS </span><b>3</b> <span>· LAST UPDATED </span><b>12 Sep 2026</b></div>
+      <div><span>COMMITS COVERED </span><b>7a3e84d · f16d9b8 · a0ba44a · 2749616 · 05b5893</b></div>
       <div><span>AUTHORS </span><b>Jack Barnett (direction) · Claude (build)</b></div>
     </div>
   </header>
@@ -116,6 +116,20 @@
       <li><a href="#p1-decisions">1.4 Decisions and alternatives</a></li>
       <li><a href="#p1-measurements">1.5 Measurements</a></li>
       <li><a href="#p1-next">1.6 What this enables next</a></li>
+      <li><a href="#part-2">Part 2 — The Orbit Pipeline</a></li>
+      <li><a href="#p2-context">2.1 Context</a></li>
+      <li><a href="#p2-built">2.2 What was built</a></li>
+      <li><a href="#p2-how">2.3 How it works</a></li>
+      <li><a href="#p2-decisions">2.4 Decisions and alternatives</a></li>
+      <li><a href="#p2-measurements">2.5 Measurements</a></li>
+      <li><a href="#p2-next">2.6 What this enables next</a></li>
+      <li><a href="#part-3">Part 3 — The Satellite Layer</a></li>
+      <li><a href="#p3-context">3.1 Context</a></li>
+      <li><a href="#p3-built">3.2 What was built</a></li>
+      <li><a href="#p3-how">3.3 How it works</a></li>
+      <li><a href="#p3-decisions">3.4 Decisions and alternatives</a></li>
+      <li><a href="#p3-measurements">3.5 Measurements</a></li>
+      <li><a href="#p3-next">3.6 What this enables next</a></li>
       <li><a href="#references">References</a></li>
       <li><a href="#revisions">Revision log</a></li>
     </ol>
@@ -152,6 +166,7 @@
       <p><strong>The Sun.</strong> A billboard sprite placed along the computed sun vector each frame, drawn with a canvas-generated radial gradient whose inner stop is sized so the bright disc subtends the Sun's true 0.53°, inside a soft nine-degree glare. It is drawn in the sky pass, so the Earth occludes it: sunrise and sunset over the limb need no special handling.</p>
       <p><strong>The stars.</strong> The first pass plotted the Yale Bright Star Catalogue — 9,096 naked-eye stars — as points. It looked sparse. The second pass replaced it with the HYG database (Hipparcos, Yale and Gliese combined): 119,613 stars, each at its J2000 right ascension and declination in the inertial frame, sized and faded by visual magnitude and coloured by its B−V index through a small black-body ramp. Because the stars live in the inertial frame they hold still while the Earth turns beneath them, which is what the sky does.</p>
       <p><strong>The Milky Way.</strong> Jack's brief was specific: see the galaxy, but plot data rather than paste a photograph. The galaxy, to the eye, is the integrated light of stars too faint to resolve individually, so we reproduced it the same way. The pipeline reads the Tycho-2 catalogue — 2,539,913 stars — sums their light into a sky-brightness map, and the browser drapes that map over the celestial sphere underneath the plotted stars. The band, the dark lanes of the Great Rift and the bulge toward Sagittarius all emerge from the catalogue. The map is 4096×2048 pixels and 202 KB.</p>
+      <p><strong>Postscript, 12 September.</strong> The Milky Way did not survive contact with a full-resolution display. Seen at 1:1 on Jack's monitor the map read as blotches — at the globe's 40° field a 4096-wide map gives 455 texels across the screen, and a seven-texel blur is thirty screen pixels. We regenerated it at 8192×4096 with a five-texel blur; the band's structure appeared, but so did grain, because 2.5 million stars are a sparse sample of the galaxy and at that resolution the grain is the stars themselves. Sharp or smooth, not both, from this catalogue. Jack chose neither over a photograph, and the map, its shader, its slider and its builder were removed (commit 05b5893). The lesson is recorded in Part 3: a star-count map needs Gaia-scale density, not more blur. The plotted stars remain.</p>
       <p><strong>Time and frames.</strong> A simulation clock that follows the wall clock, or runs at 1× to 3,600× real time, or pauses, or jumps to a chosen date; every visible quantity is recomputed from its single value each frame. Two reference frames, switchable without a visual jump: inertial (the sky holds still, the Earth turns) and Earth-fixed (the Earth holds still, the sky and Sun move).</p>
       <p><strong>The interface.</strong> A top bar with the wordmark, a live UTC clock and a LIVE / SIM / PAUSED badge, the frame toggle and a Layers button; a layers panel with toggles for day/night shading, city lights, clouds, atmosphere, stars, the Milky Way and a 15° graticule, plus sliders for star brightness and Milky Way intensity; time controls; and a status readout of camera latitude, longitude and altitude, the sub-solar point, sidereal time, frame rate, texture tier and star count, with data credits beneath.</p>
       <p><strong>The pipeline.</strong> Three Python modules, named for what they do, run from a <span class="mono">uv</span> project with two dependencies (NumPy, Pillow): <span class="mono">build_earth_textures_from_nasa</span>, <span class="mono">build_star_catalog_from_hyg</span>, <span class="mono">build_milky_way_glow_from_tycho2</span>. The first pass had a single dependency-free script called <span class="mono">build_stars.py</span>; the name was rightly called out as saying nothing, and the restructuring followed.</p>
@@ -368,18 +383,365 @@
             <tr><td>Stars summed for the Milky Way</td><td class="num">—</td><td class="num">2,539,913</td><td>Tycho-2; 2,494,444 fainter than V 8 contribute</td></tr>
             <tr><td>Pipeline run times</td><td class="num">&lt;1 s</td><td class="num">18 s · 2 s · 7 s</td><td>textures · stars · Milky Way</td></tr>
             <tr><td>Raw data on disk (git-ignored)</td><td class="num">3.9 MB</td><td class="num">256 MB</td><td>None of it ships</td></tr>
-            <tr><td>Frame rate</td><td class="num">240 fps</td><td class="num">pending</td><td>Jack's RTX 5070; the embedded pane cannot measure it</td></tr>
+            <tr><td>Frame rate</td><td class="num">240 fps</td><td class="num">240 fps</td><td>Jack's RTX 5070; the second reading taken on 12 Sep with the satellite layer added on top</td></tr>
             <tr><td>Sub-solar point check</td><td colspan="2" class="num">4.4° N, 62.5° W at 16:06 UTC, 11 Sep</td><td>Correct declination for the date and longitude for the hour</td></tr>
             <tr><td>Brightest star in catalogue and on screen</td><td class="num">Sirius, V −1.46</td><td class="num">Sirius, V −1.44</td><td>Yale and HYG values respectively</td></tr>
           </tbody>
         </table>
       </div>
-      <p>Two things we could not measure well deserve saying. The frame rate cannot be read in the embedded browser pane, which pauses animation when it is not displayed; the 240 fps figure is Jack's reading of the first pass on his own display, and the second pass — two more full-screen shells and thirteen times the star points — is awaiting his. And the star brightness, Milky Way intensity and cloud opacity were calibrated from downscaled captures; the sliders exist so that the defaults can be set from a full-resolution view and then baked in.</p>
+      <p>Two things we could not measure well deserve saying. The frame rate cannot be read in the embedded browser pane, which pauses animation when it is not displayed; the 240 fps figure is Jack's reading of the first pass on his own display, and the second pass — two more full-screen shells and thirteen times the star points — was confirmed at the same 240 fps on 12 September, by then with the satellite layer drawn on top. And the star brightness, Milky Way intensity and cloud opacity were calibrated from downscaled captures; the sliders exist so that the defaults can be set from a full-resolution view and then baked in.</p>
 
       <h3 id="p1-next"><span class="n">1.6</span>What this enables next</h3>
       <p>The satellite layer has a place waiting for it: the <span class="mono">world</span> group, in the inertial frame the propagator works in, with GMST already computed by the same formula the propagator library uses. A Web Worker will run SGP4 over every element set about once a second and post positions and velocities in a typed array; the main thread will extrapolate between updates and draw one point cloud beside the Earth, with an orbit path for whatever is selected. Nothing in the globe needs to change for that to happen.</p>
       <p>The pipeline pattern is proven: a raw upstream file, a module that validates and reshapes it, a small column-oriented file the browser turns straight into GPU attributes. The satellite snapshot — element sets plus catalogue metadata, refreshed every two hours under CelesTrak's one-download rule — is the next module in that pattern, and the daily archive it will keep is the foundation of every history feature the plan describes.</p>
       <p>And the asset weights measured here are exactly what a static host would serve. Nothing stands between the current build and a public URL except the decision to put it there.</p>
+    </section>
+
+    <section class="part" id="part-2">
+      <div class="part-head">
+        <div class="part-num"><small>Part</small>2</div>
+        <h2>The Orbit Pipeline</h2>
+      </div>
+      <p class="part-meta">11 September 2026 · commit a0ba44a · pipeline/ap_pipeline/orbits, pipeline/scheduling, web/vite.config.ts, data/{orbits,raw,archive,logs}</p>
+
+      <h3 id="p2-context"><span class="n">2.1</span>Context</h3>
+      <p>The globe was ready to receive satellites; what it lacked was the element sets to place them with. Part 1 had already rehearsed the pattern — a raw upstream file, a module that validates and reshapes it, a small file the browser reads — on data that never changes. Orbital elements change every two hours, come from a source with strict usage rules, and are worthless if they are stale or wrong. The pipeline for them therefore had to be three things the texture and star modules never needed to be: scheduled, well-behaved toward its source, and suspicious of its own input.</p>
+      <p>The source rule shaped everything. Since 26 March 2026 CelesTrak permits one download per dataset per two-hour update window; a second request in the same window is answered with HTTP 403, and repeated abuse with a block. The rule is reasonable — the data is derived from the 18th Space Defense Squadron's catalogue and served free — and it makes a naive "fetch on a timer" pipeline a liability rather than a convenience. Jack's brief for this stage was one sentence: <em>downloading the satellite data, with a pipeline for regular scheduled downloads, data storage and validation</em>. We read "regular" as "hourly, safely", and built the client so that running it too often is harmless by construction.</p>
+      <p>We also decided, before writing any client code, to look. One small request — the ISS by catalogue number, a dataset we never use — showed exactly what CelesTrak sends back: JSON with 17 OMM fields, no <span class="mono">Last-Modified</span>, no <span class="mono">ETag</span>. That single fact changed the design from conditional HTTP requests, which the server cannot honour, to time-based pacing, which it can. The request cost one window on a dataset we do not fetch, and it saved a wrong design.</p>
+
+      <h3 id="p2-built"><span class="n">2.2</span>What was built</h3>
+      <p><strong>Five modules and a scheduler script.</strong> The pipeline gained a package, <span class="mono">ap_pipeline/orbits</span>, with one module per concern, each named for what it does: <span class="mono">celestrak_client</span> (the well-behaved HTTP client, its gates and its memory), <span class="mono">validate_element_sets</span> (shape and range checks, propagator initialisation, propagation, de-duplication, flags, derived orbit numbers), <span class="mono">satcat</span> (the satellite catalogue as a lookup by catalogue number), <span class="mono">build_orbit_snapshot</span> (validation plus catalogue join, written as the file the site loads) and <span class="mono">run_orbit_update</span>, the single entry point the scheduler calls. Beside it, <span class="mono">pipeline/scheduling/register_windows_task.ps1</span> registers, inspects or removes the hourly job. Two new dependencies arrived with them: <span class="mono">httpx</span> for HTTP and <span class="mono">sgp4</span>, Brandon Rhodes' Python binding of the reference SGP4 implementation.</p>
+      <p><strong>Seven datasets.</strong> Six CelesTrak GP groups — <span class="mono">active</span> (every active satellite, 16,564 objects), <span class="mono">stations</span>, <span class="mono">last-30-days</span> (recent launches not yet flagged active), and the Fengyun-1C, Iridium 33 and Cosmos 2251 fragmentation clouds — plus the SATCAT, the 70,656-row catalogue that gives each object its type, owner, launch date and site, operational status and radar cross-section class. CelesTrak publishes no all-objects group; the remaining ~16,000 tracked rocket bodies and fragments live only in Space-Track's catalogue, which needs an account and, for public redistribution, an Orbital Data Request. That decision was left to Jack and is still open; the six groups cover every active satellite and the three largest debris clouds.</p>
+      <p><strong>Storage with the production shape.</strong> Under the git-ignored <span class="mono">data/</span>: every raw response, untouched, for seven days; the client's memory in <span class="mono">orbits/state.json</span>; the current snapshot and its manifest in <span class="mono">orbits/latest/</span>; one gzipped copy of each dataset per UTC day in <span class="mono">archive/</span>, kept forever; and a log with UTC timestamps. A forty-line middleware in the Vite configuration serves <span class="mono">orbits/latest/</span> at <span class="mono">/data/orbits/</span> with the exact cache headers object storage will send later — the manifest always revalidated, the versioned snapshot immutable for a year — so the browser side could be written once against the real contract.</p>
+      <p><strong>The scheduled job.</strong> Windows Task Scheduler, hourly at seventeen minutes past, only when the network is available, twenty-minute time limit, no overlapping instances. The task is deliberately dumb; the pipeline decides internally whether anything may be fetched. Registered with Jack's approval and exercised by hand: exit 0, nothing fetched, gates held. Its first unattended fetch came at 21:17 UTC that evening and produced a new snapshot without anyone watching.</p>
+
+      <h3 id="p2-how"><span class="n">2.3</span>How it works</h3>
+      <p><strong>The gates.</strong> On every run the client considers each dataset in turn and asks four questions before it will make a request (Figure 2.1). Is the whole client backing off after a server error? Has this dataset's next-allowed time not yet arrived? Was it asked for less than 58 minutes ago? Was it successfully downloaded less than 1 hour 50 minutes ago? A yes to any of them means no request. Only when all four are no does a <span class="mono">GET</span> go out, with a User-Agent that names the project and a contact address, as the policy asks.</p>
+      <p>Each answer then updates the memory. A 200 stores the body untouched in <span class="mono">data/raw</span>, hashes it to learn whether the content actually changed, and sets the next-allowed time 1 hour 50 minutes ahead. A 403 means we asked before CelesTrak's own update landed; it is recorded as information, not failure — the old file stays current and the dataset may be asked for again in 58 minutes. A 5xx stops the entire run and blocks every dataset for six hours, because a struggling server is the one thing a polite client must not add load to. A 301 or a 404 raises an error and exits with code 2, because a moved or vanished endpoint is a change only a person should respond to.</p>
+
+      <figure>
+        <svg viewBox="0 0 980 400" role="img" aria-label="Decision flow for one GP dataset on each hourly run: if backing off after a server error, skip; if the next-allowed time is in the future, skip; if attempted less than 58 minutes ago, skip; if downloaded less than 1 hour 50 minutes ago, skip; otherwise request. A 200 stores the body and sets next-allowed to now plus 1h50; a 403 sets next-allowed to now plus 58 minutes; a 5xx blocks all datasets for 6 hours; a 301 or 404 raises an error for a human." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="cc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+          </defs>
+
+          <text x="20" y="28" font-weight="700" font-size="13">every hourly run, for each GP dataset</text>
+
+          <rect x="20" y="48" width="170" height="44" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="66" font-weight="700">backing off?</text>
+          <text x="30" y="82">server error &lt; 6 h ago</text>
+
+          <rect x="230" y="48" width="170" height="44" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="240" y="66" font-weight="700">next_allowed in future?</text>
+          <text x="240" y="82">set by the last 200 or 403</text>
+
+          <rect x="440" y="48" width="170" height="44" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="450" y="66" font-weight="700">asked &lt; 58 min ago?</text>
+          <text x="450" y="82">never poll faster than hourly</text>
+
+          <rect x="650" y="48" width="170" height="44" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="660" y="66" font-weight="700">got it &lt; 1 h 50 ago?</text>
+          <text x="660" y="82">one download per window</text>
+
+          <line x1="190" y1="70" x2="228" y2="70" stroke="currentColor" stroke-width="1.4" marker-end="url(#c)"/>
+          <line x1="400" y1="70" x2="438" y2="70" stroke="currentColor" stroke-width="1.4" marker-end="url(#c)"/>
+          <line x1="610" y1="70" x2="648" y2="70" stroke="currentColor" stroke-width="1.4" marker-end="url(#c)"/>
+          <text x="209" y="62" text-anchor="middle" font-size="11">no</text>
+          <text x="419" y="62" text-anchor="middle" font-size="11">no</text>
+          <text x="629" y="62" text-anchor="middle" font-size="11">no</text>
+
+          <line x1="105" y1="92" x2="105" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="315" y1="92" x2="315" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="525" y1="92" x2="525" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="735" y1="92" x2="735" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="105" y1="130" x2="735" y2="130" stroke="currentColor" stroke-width="1.2"/>
+          <text x="112" y="112" font-size="11">yes</text>
+          <text x="322" y="112" font-size="11">yes</text>
+          <text x="532" y="112" font-size="11">yes</text>
+          <text x="742" y="112" font-size="11">yes</text>
+          <rect x="330" y="146" width="180" height="30" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="420" y="166" text-anchor="middle" font-weight="700">skip — no request made</text>
+          <line x1="420" y1="130" x2="420" y2="144" stroke="currentColor" stroke-width="1.2" marker-end="url(#c)"/>
+
+          <line x1="820" y1="70" x2="880" y2="70" style="stroke:var(--accent)" stroke-width="2" marker-end="url(#cc)"/>
+          <text x="850" y="62" text-anchor="middle" font-size="11" style="fill:var(--accent)" font-weight="700">no</text>
+          <rect x="882" y="48" width="78" height="44" fill="none" style="stroke:var(--accent)" stroke-width="2"/>
+          <text x="921" y="66" text-anchor="middle" font-weight="700" style="fill:var(--accent)">GET</text>
+          <text x="921" y="82" text-anchor="middle" font-size="11">gp.php?GROUP=…</text>
+
+          <line x1="921" y1="92" x2="921" y2="212" stroke="currentColor" stroke-width="1.2"/>
+          <text x="20" y="212" font-weight="700" font-size="13">outcome</text>
+
+          <rect x="20" y="228" width="220" height="70" fill="none" style="stroke:var(--accent)" stroke-width="1.6"/>
+          <text x="30" y="246" font-weight="700" style="fill:var(--accent)">200 — data</text>
+          <text x="30" y="262">save body untouched to data/raw</text>
+          <text x="30" y="278">sha256 vs last → "changed?"</text>
+          <text x="30" y="294">next_allowed = now + 1 h 50</text>
+
+          <rect x="260" y="228" width="220" height="70" fill="none" style="stroke:var(--amber)" stroke-width="1.6"/>
+          <text x="270" y="246" font-weight="700" style="fill:var(--amber)">403 — window already used</text>
+          <text x="270" y="262">we asked before their update</text>
+          <text x="270" y="278">not an error; keep the old file</text>
+          <text x="270" y="294">next_allowed = now + 58 min</text>
+
+          <rect x="500" y="228" width="220" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="510" y="246" font-weight="700">5xx — server trouble</text>
+          <text x="510" y="262">stop the whole run</text>
+          <text x="510" y="278">blocked_until = now + 6 h</text>
+          <text x="510" y="294">(all datasets)</text>
+
+          <rect x="740" y="228" width="220" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="750" y="246" font-weight="700">301 / 404 — obsolete URL</text>
+          <text x="750" y="262">raise ObsoleteEndpoint</text>
+          <text x="750" y="278">exit code 2, logged ERROR</text>
+          <text x="750" y="294">a human updates the client</text>
+
+          <line x1="130" y1="212" x2="921" y2="212" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="130" y1="212" x2="130" y2="226" stroke="currentColor" stroke-width="1.2" marker-end="url(#c)"/>
+          <line x1="370" y1="212" x2="370" y2="226" stroke="currentColor" stroke-width="1.2" marker-end="url(#c)"/>
+          <line x1="610" y1="212" x2="610" y2="226" stroke="currentColor" stroke-width="1.2" marker-end="url(#c)"/>
+          <line x1="850" y1="212" x2="850" y2="226" stroke="currentColor" stroke-width="1.2" marker-end="url(#c)"/>
+
+          <text x="20" y="340" font-weight="700" font-size="13">the hourly log, first evening</text>
+          <text x="20" y="360">19:10 first run, by hand: fetched (13.6 s) · 19:17 first scheduled run: skipped (0.3 s) · 20:17 skipped · 21:17 fetched (16.6 s, new snapshot) · 22:17 skipped · 23:17 …</text>
+          <text x="20" y="376">Every second run fetches. A gate of exactly two hours would let a run arrive a few seconds early and skip, stretching the cadence to three</text>
+          <text x="20" y="392">hours; 1 h 50 admits it and still rejects the one-hour run, so the client fetches every second hour at the same minute, locked to CelesTrak's own phase.</text>
+        </svg>
+        <figcaption><b>Figure 2.1</b> One GP dataset, one hourly run. Four gates stand between the scheduler and a request; only a 200 with new content triggers a snapshot rebuild. The log line beneath is the real first evening.</figcaption>
+      </figure>
+
+      <p><strong>Locking onto their cadence.</strong> CelesTrak updates on a two-hourly phase we cannot see. Our first request in a window succeeds at some offset after their update; if we then ask every two hours at the same minute, that offset never changes and we never see a 403. If we happen to ask just before an update, that request gets a 403, the next hourly run succeeds, and the offset becomes roughly an hour — stable from then on. We expect one or two 403s in the pipeline's whole life, both harmless. The state file is the client's memory of all this: per dataset, the last attempt, last success, last status, the newest raw file's path and SHA-256, the next-allowed time and a count of consecutive 403s; globally, the back-off time and when the SATCAT directory was last checked. Deleting it is the one way to make the client misbehave, and it says so in a comment inside.</p>
+      <p><strong>The SATCAT is cheaper.</strong> CelesTrak's directory listing for it (<span class="mono">satcat/jsonDir.php</span>) does report a modification time. The client polls that listing at most hourly and downloads the 70,656-row CSV only when the time has changed, which is once or twice a day.</p>
+      <p><strong>Three layers of validation.</strong> Nothing reaches the snapshot without passing all three, each catching what the previous one cannot. First, shape and range: thirteen required fields present and numeric, eccentricity in [0, 1), inclination in [0°, 180°], mean motion in (0, 20] revolutions per day, an epoch that parses; then de-duplication — the six groups overlap (the ISS is in <span class="mono">active</span> and <span class="mono">stations</span>), and for each catalogue number the newest epoch wins. Second, initialisation: the <span class="mono">sgp4</span> package's OMM loader builds a propagator record from the exact field names CelesTrak sends, and anything it refuses is rejected with the exception's name as the reason. Third, propagation: every accepted record is propagated, vectorised, at three moments — its own epoch, now, and now plus one day — and SGP4's own error codes speak: 6 means the object has decayed, 5 sub-orbital, 1–4 numerical pathologies a range check cannot see. Sets older than fourteen days are kept but flagged stale; older than sixty days they are dropped. The validator also derives, from the elements alone, each object's period, semi-major axis, apogee and perigee altitudes and a coarse regime — LEO, MEO, GEO, HEO or beyond — so the site's first filters need no further arithmetic.</p>
+      <p><strong>The snapshot and the manifest.</strong> The snapshot is column-oriented: a <span class="mono">columns</span> block describing each of 32 fields, and a <span class="mono">data</span> block holding one array per field, all of the same length, sorted by catalogue number. The 17 OMM fields are carried verbatim — the epoch as CelesTrak's ISO string, the numbers as the same doubles — so the browser can rebuild any object's OMM record and hand it to its propagator unchanged; the derived orbit numbers, the flags, the groups an object appeared in, and seven SATCAT fields ride alongside. The manifest is what the site reads first: the current version, the snapshot's filename and size, the counts by type and regime and group, the validation summary, and provenance for every input. Its name never changes and it is served <span class="mono">no-cache</span>; the snapshot's name carries its version and is served immutable, and the newest two versions are kept so a page that has already read the manifest can still fetch its file during a rebuild.</p>
+      <p><strong>One run, start to finish.</strong> Load the state; for each group, pass the gates or skip; check the SATCAT listing; if anything new arrived (or no snapshot exists yet), validate everything and write a new snapshot and manifest; write today's gzipped copy of every dataset into the archive; delete raw files older than seven days; write a summary of the run and append to the log; exit 0, or 2 if the run was halted. A run in which every gate says skip takes a third of a second. The archive keeps each day's last state — overwritten within the day, final at midnight — about 2.8 MB a day, a gigabyte a year, and the raw material for every "how did this orbit change" feature in the plan.</p>
+
+      <h3 id="p2-decisions"><span class="n">2.4</span>Decisions and alternatives considered</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Decision</th><th>Why</th><th>Alternative not taken</th></tr></thead>
+          <tbody>
+            <tr><td>Probe the endpoint before designing the client</td><td>One tiny request revealed the absence of HTTP validators and settled the design.</td><td>Design from the documentation alone.</td></tr>
+            <tr><td>Time-based pacing, not conditional requests</td><td><span class="mono">gp.php</span> sends no <span class="mono">Last-Modified</span> or <span class="mono">ETag</span>; the policy is per-window anyway.</td><td>If-Modified-Since — ideal, but the server cannot honour it.</td></tr>
+            <tr><td>Treat 403 as information</td><td>It means "you already have the current version"; retrying would be the abuse the policy targets.</td><td>Exponential retry.</td></tr>
+            <tr><td>A 1 h 50 re-fetch gate with hourly runs</td><td>Locks a two-hour cadence with no 403s; a two-hour gate would drift to three (Figure 2.1).</td><td>Schedule the task every two hours — fragile if the PC wakes late.</td></tr>
+            <tr><td>Stop everything on a server error</td><td>A struggling server needs less load, not retries; six hours is long enough for a human to notice.</td><td>Per-dataset back-off.</td></tr>
+            <tr><td>Six CelesTrak groups, no Space-Track yet</td><td>No account, no redistribution question; covers every active satellite and the three big debris clouds.</td><td>The full ~35k catalogue from Space-Track (left to Jack).</td></tr>
+            <tr><td>Validate with the <span class="mono">sgp4</span> package</td><td>The same algorithm the browser will run, vectorised; its error codes are the domain's own vocabulary.</td><td>Range checks only.</td></tr>
+            <tr><td>OMM fields verbatim in the snapshot</td><td>Zero conversion risk on the way to the browser's propagator.</td><td>Pre-converted radians and milliseconds — smaller, one more place to be wrong.</td></tr>
+            <tr><td>Column-oriented JSON</td><td>Parses fast, maps onto typed arrays, compresses to 1.09 MB. The same shape Part 1 chose for the stars.</td><td>Binary — smaller, opaque; later if needed.</td></tr>
+            <tr><td>Archive raw inputs daily, not snapshots</td><td>Raw is the ground truth; any future snapshot format can be rebuilt from it.</td><td>Archive the derived file.</td></tr>
+            <tr><td>Windows Task Scheduler</td><td>Already on the machine; zero new software; the pipeline is idempotent so hourly is safe.</td><td>Airflow or a cron container — the anti-pattern this project exists to avoid.</td></tr>
+            <tr><td>Vite middleware for <span class="mono">/data/orbits/</span></td><td>Keeps pipeline output out of <span class="mono">web/public</span> and git while rehearsing the production cache headers.</td><td>Copy the snapshot into <span class="mono">public/</span> — would tempt a commit.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="p2-measurements"><span class="n">2.5</span>Measurements</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Quantity</th><th>Value</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td>Records fetched, first run</td><td class="num">19,527</td><td>active 16,564 · stations 21 · last-30-days 276 · Fengyun-1C 1,970 · Iridium 33 110 · Cosmos 2251 585</td></tr>
+            <tr><td>Duplicates resolved</td><td class="num">278</td><td>Newest epoch wins</td></tr>
+            <tr><td>Rejected</td><td class="num">1</td><td>SGP4 error 6, decayed</td></tr>
+            <tr><td>Flagged stale (&gt; 14 d)</td><td class="num">55</td><td>Kept, marked</td></tr>
+            <tr><td>Accepted</td><td class="num">19,248</td><td>19,247 in the first unattended snapshot that evening</td></tr>
+            <tr><td>By type</td><td class="num">16,564 · 12 · 2,665 · 7</td><td>Payload · rocket body · debris · unknown (SATCAT)</td></tr>
+            <tr><td>By regime</td><td class="num">18,422 · 194 · 552 · 46 · 34</td><td>LEO · MEO · GEO · HEO · beyond GEO</td></tr>
+            <tr><td>SATCAT rows · matched</td><td class="num">70,656 · 100%</td><td>Every accepted object found</td></tr>
+            <tr><td>Element-set age</td><td class="num">median 0.34 d · p95 2.15 d</td><td>At build time</td></tr>
+            <tr><td>Snapshot size</td><td class="num">5.0 MB · 1.09 MB gzipped</td><td>32 columns × 19,248</td></tr>
+            <tr><td>Run time</td><td class="num">13.6 s · 0.3 s · 16.6 s</td><td>First fetch · gated run · first unattended fetch (21:17 UTC)</td></tr>
+            <tr><td>Requests per two hours</td><td class="num">7 at most</td><td>Six GP groups and one SATCAT listing; the CSV only when it changed</td></tr>
+            <tr><td>Archive, day one</td><td class="num">2.8 MB</td><td>Seven gzipped files; ~1 GB a year at this rate</td></tr>
+            <tr><td>New code</td><td class="num">5 modules · 1 script · 40 lines of middleware</td><td>Python 3.14, httpx 0.28, sgp4 2.27</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Two numbers we watched for and did not see: no 403 in the first evening (the phase locked on the first fetch), and no validation failure beyond the single decayed object — CelesTrak's data is clean, which is itself worth having measured before trusting it in the browser.</p>
+
+      <h3 id="p2-next"><span class="n">2.6</span>What this enables next</h3>
+      <p>The browser can now be given everything it needs to draw the catalogue: a manifest that says which file is current, an immutable file with the 17 OMM fields exactly as the propagator wants them, and the metadata to name, colour and filter every object. Part 3 is that layer, and it was written against this contract without a line of the pipeline changing.</p>
+      <p>The archive started on 11 September. Every history feature in the plan — how an orbit decayed, when a constellation shell was raised, what a re-entry looked like in its last week — is a query over files this pipeline is already writing. And the same client pattern, gated and stateful, is the template for Space-Track when Jack decides to file the request that would let the full catalogue be shown.</p>
+    </section>
+
+    <section class="part" id="part-3">
+      <div class="part-head">
+        <div class="part-num"><small>Part</small>3</div>
+        <h2>The Satellite Layer</h2>
+      </div>
+      <p class="part-meta">11–12 September 2026 · commits 2749616, 05b5893 · web/src/lib/orbits, web/src/lib/globe/{satellites,orbitPath}.ts, web/src/lib/astro/frames.ts, web/src/lib/state/catalog.svelte.ts, web/src/ui</p>
+
+      <h3 id="p3-context"><span class="n">3.1</span>Context</h3>
+      <p>This is the part the project exists for. Part 1 built a world with a coordinate frame and a clock; Part 2 built a supply of element sets that arrives every two hours in a form the browser can trust. What remained was to put 19,247 objects into that world, moving, at the right places, at any speed of time the clock can run, with the page still rendering at the refresh rate of the display — and to do it in a way that leaves the main thread nearly idle, because everything the plan describes after this (search, passes, explorers) will want that idle time.</p>
+      <p>Jack's brief was a sentence and two questions: <em>plot the satellites into our system, make it look visually impressive and clean, and let me know the load times and what is required of the browser versus my local machine.</em> The second question is a design constraint disguised as a request for a report: the split between what his PC does on a schedule and what every visitor's browser does on arrival is the architecture. The answer is in 3.3 and the numbers are in 3.5.</p>
+      <p>Two things were true before a line was written. The game plan had already decided on satellite.js — a JavaScript port of the reference SGP4/SDP4 implementation — running in a Web Worker, with the main thread extrapolating between its updates. And the snapshot from Part 2 carries every element set verbatim under its OMM names, so satellite.js's OMM loader could be fed the columns directly. What the plan had not decided was how many workers, how often they should run, and how far the extrapolation could be trusted. Those were measured before they were designed.</p>
+
+      <h3 id="p3-built"><span class="n">3.2</span>What was built</h3>
+      <p><strong>A benchmark first.</strong> Before any browser code, we ran satellite.js 7 in Node against the real snapshot. Building 19,247 propagator records took about 100 ms. Propagating all of them at one instant took 54 ms on the first call and 7–10 ms once the JavaScript engine had warmed; the library's WebAssembly bulk propagator took 5 ms; its four-thread build took 11–14 ms, slower than one thread, because the synchronisation costs more than it saves at this size. The JavaScript and WebAssembly paths agreed to a micrometre. Those five numbers settled the architecture in an hour: one worker, plain JavaScript, no worker pool, no cross-origin-isolation headers, and a tick rate of up to thirty per second with room to spare.</p>
+      <p><strong>The loader and the catalogue.</strong> <span class="mono">loadOrbitSnapshot</span> makes the two requests Part 2 designed for — the manifest, always revalidated, then the immutable versioned file it names — streaming the second so the status bar can show bytes arriving, then parsing and checking the 17 OMM columns. <span class="mono">SatelliteCatalog</span> is a read-only view over the parsed columns with one byte per object for type, regime, debris-cloud membership and staleness, counts by class, a map from catalogue number to index, and the filter mask the GPU reads. It contains no Three.js and no Svelte, so the interface, the globe and the propagation engine share it freely.</p>
+      <p><strong>The worker and the engine.</strong> <span class="mono">propagation.worker.ts</span> receives the OMM columns, builds one satellite.js record per object, and on request runs SGP4 for every object at one simulation instant, writing position and velocity into two transferable buffers that cross to the main thread without copying and come back for reuse. It also samples one revolution of any object on demand. <span class="mono">PropagationEngine</span> is the main-thread half: it owns the worker, decides when to ask (3.3), keeps at most one request in flight, measures the round trip, and hands finished frames to the layer.</p>
+      <p><strong>The layer.</strong> <span class="mono">SatelliteLayer</span> is one Three.js <span class="mono">Points</span> object with a custom shader pair. The vertex shader moves each point along its velocity with point-mass gravity, colours it by type or regime, dims it inside the Earth's shadow, scales it by its distance from the camera, and enlarges the hovered and selected object; the fragment shader draws an anti-aliased disc with a dark rim so a dot reads over black space and sunlit cloud alike. The layer is depth-tested against the Earth, so the far side of the shell is hidden. Beside it, <span class="mono">OrbitPath</span> draws one revolution of the selected object as a closed line that is brightest at the object and fades toward the far side of the orbit, its bright end following the object by a phase uniform rather than by recomputation.</p>
+      <p><strong>Interaction and interface.</strong> Hovering names an object — name, catalogue number, type, regime, perigee and apogee — in a label at the pointer. A click selects it, draws its orbit, and opens a card: live latitude, longitude, height above the WGS84 ellipsoid, speed, sunlit or eclipsed; then period, perigee and apogee, inclination, eccentricity and the element set's epoch and age; then owner, launch date and site, operational status and radar size, with the SATCAT codes spelled out. The Layers panel gained a Satellites section: the active catalogue and the debris clouds as separate toggles (active on by default, as decided in the plan), colour by type or by regime with a legend and counts, a size slider, Earth's shadow, and the orbit line. The status bar reports how many objects are shown, how old the snapshot is, the worker's tick rate and time per tick, and the load timeline. Picking is done on the CPU with the same extrapolation the shader draws, so what the pointer hits is exactly what is on screen.</p>
+      <p><strong>Live refresh.</strong> The page re-reads the manifest every ten minutes and whenever its tab regains focus; when the pipeline has published a new version, the page loads it in the background, builds a new layer and worker, swaps them in, and keeps the selection by catalogue number. The test was real: a snapshot rebuilt by hand while the page was open was picked up and swapped in with the ISS still selected.</p>
+      <p><strong>The review, folded in.</strong> Jack's first look on his own display produced four notes within the hour. The points were the right size at 15,000 km but too small when he flew in close: fixed-pixel sizing became depth scaling. Two lines of satellites appeared at constant latitudes when time ran at 3,600× — near Glasgow and just above the Alps — and he wanted to know whether they were real (they are; 3.5 has the numbers). The card's "Perigee · apogee" label wrapped and threw the row out of line: labels no longer wrap. And, with sixteen thousand white dots over the planet, the stars were invisible and indistinguishable, and the Milky Way map "very poor resolution". The palette lost its white: payloads became cyan, debris lavender, rocket bodies amber, so stars and satellites can never be confused. The Milky Way we regenerated at twice the resolution with a third of the blur (Part 1 describes the original); the result was sharper but grainy — a count of 2.5 million stars is a sparse sample of the galaxy, and at that resolution the grain is the stars themselves. Jack chose removal over a photograph, and the map, its shader, its slider and its builder were deleted the next morning. His status-bar reading of 36 Hz at 3,600× also exposed a real bug in the engine — 3.3 explains it — which was fixed before the stage was committed.</p>
+
+      <h3 id="p3-how"><span class="n">3.3</span>How it works</h3>
+      <p><strong>Three actors, three kinds of memory.</strong> The pipeline wrote the snapshot hours ago. The main thread fetches it once and keeps the human-readable columns — names, owners, periods — for the interface. The worker keeps the propagator's own records and does all the orbital arithmetic. The GPU keeps two small buffers of positions and velocities and does the per-frame motion itself. Element sets cross the worker boundary once, at load; afterwards only positions and velocities move, by transfer, and the GPU carries them between ticks (Figure 3.1).</p>
+
+      <figure>
+        <svg viewBox="0 0 980 470" role="img" aria-label="Data flow: the pipeline writes manifest.json and gp-version.json into data/orbits/latest; the main thread fetches the manifest then the gp file, parses it, builds the catalogue, and sends the 17 OMM columns to the worker; the worker builds satellite records and, on each propagate request with a simulation time, runs SGP4 for every object and returns position and velocity buffers by transfer; the main thread copies them into the GPU attributes and returns the buffers to the worker; every frame the vertex shader extrapolates with p = p0 + v dt + half a dt squared using the uDt uniform. Hover and click use the same formula on the CPU." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="dd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+          </defs>
+
+          <text x="20" y="26" font-weight="700" font-size="13">Jack's PC · pipeline (every 2 h)</text>
+          <text x="290" y="26" font-weight="700" font-size="13">browser · main thread</text>
+          <text x="600" y="26" font-weight="700" font-size="13">browser · worker</text>
+          <text x="810" y="26" font-weight="700" font-size="13">browser · GPU</text>
+          <line x1="270" y1="34" x2="270" y2="450" stroke="currentColor" stroke-width="0.6" stroke-dasharray="3 4"/>
+          <line x1="580" y1="34" x2="580" y2="450" stroke="currentColor" stroke-width="0.6" stroke-dasharray="3 4"/>
+          <line x1="790" y1="34" x2="790" y2="450" stroke="currentColor" stroke-width="0.6" stroke-dasharray="3 4"/>
+
+          <rect x="20" y="50" width="220" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="70" font-weight="700">data/orbits/latest/</text>
+          <text x="30" y="88">manifest.json  (no-cache)</text>
+          <text x="30" y="104">gp-&lt;version&gt;.json  (immutable)</text>
+
+          <rect x="290" y="50" width="270" height="118" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="70" font-weight="700">load, once per page (or per new version)</text>
+          <text x="300" y="90">GET manifest → GET gp file  (4.8 MB, streamed)</text>
+          <text x="300" y="106">JSON.parse  ~10 ms  → 32 columns × 19,247</text>
+          <text x="300" y="122">SatelliteCatalog: codes, counts, filter mask</text>
+          <text x="300" y="138">→ 17 OMM columns to the worker</text>
+          <text x="300" y="156" style="fill:var(--muted)">keeps names, owners, periods for the interface</text>
+          <line x1="240" y1="80" x2="288" y2="80" stroke="currentColor" stroke-width="1.4" marker-end="url(#d)"/>
+
+          <rect x="600" y="50" width="170" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="610" y="70" font-weight="700">init</text>
+          <text x="610" y="88">json2satrec × 19,247</text>
+          <text x="610" y="104">62 ms · 0 errors</text>
+          <line x1="560" y1="138" x2="598" y2="90" stroke="currentColor" stroke-width="1.4" marker-end="url(#d)"/>
+
+          <rect x="290" y="200" width="270" height="96" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="220" font-weight="700">PropagationEngine, every frame</text>
+          <text x="300" y="240">due?  1 Hz at 1× … 30 Hz at ≥ 30×</text>
+          <text x="300" y="256">target = now + rate × (round-trip + interval / 2)</text>
+          <text x="300" y="272">one request in flight; jump or rate change → now</text>
+          <text x="300" y="288" style="fill:var(--muted)">on frame: copy 2 × 231 KB into attributes, return buffers</text>
+
+          <rect x="600" y="200" width="170" height="96" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="610" y="220" font-weight="700">tick (simMs)</text>
+          <text x="610" y="240">sgp4 × 19,247  6.9 ms</text>
+          <text x="610" y="256">ECI → scene swizzle</text>
+          <text x="610" y="272">pos, vel Float32 ×3</text>
+          <text x="610" y="288">transfer, then recycled</text>
+          <line x1="560" y1="232" x2="598" y2="232" stroke="currentColor" stroke-width="1.4" marker-end="url(#d)"/>
+          <text x="579" y="226" text-anchor="middle" font-size="11">propagate</text>
+          <line x1="598" y1="268" x2="560" y2="268" style="stroke:var(--accent)" stroke-width="1.4" marker-end="url(#dd)"/>
+          <text x="579" y="282" text-anchor="middle" font-size="11" style="fill:var(--accent)">frame</text>
+
+          <rect x="810" y="200" width="160" height="132" fill="none" style="stroke:var(--accent)" stroke-width="1.4"/>
+          <text x="820" y="220" font-weight="700" style="fill:var(--accent)">vertex shader, every frame</text>
+          <text x="820" y="240">a = −μ p₀ / |p₀|³</text>
+          <text x="820" y="256">p = p₀ + v₀Δt + ½aΔt²</text>
+          <text x="820" y="272">Δt = uDt (one uniform)</text>
+          <text x="820" y="292">colour · size · shadow</text>
+          <text x="820" y="308">hovered / selected</text>
+          <text x="820" y="324">filtered → off-screen</text>
+          <line x1="560" y1="248" x2="808" y2="248" style="stroke:var(--accent)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#dd)"/>
+          <text x="684" y="184" text-anchor="middle" font-size="11" style="fill:var(--accent)">position + velocity attributes (dynamic)</text>
+          <line x1="684" y1="188" x2="684" y2="196" style="stroke:var(--accent)" stroke-width="1"/>
+
+          <rect x="290" y="330" width="270" height="96" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="350" font-weight="700">hover / click on the CPU</text>
+          <text x="300" y="370">same formula, every visible object (~1–2 ms)</text>
+          <text x="300" y="386">project → nearest within 9 px (12 px on click)</text>
+          <text x="300" y="402">skip anything behind the Earth</text>
+          <text x="300" y="418" style="fill:var(--muted)">card readout: ECI → ECEF (GMST) → WGS84 geodetic</text>
+
+          <rect x="600" y="330" width="170" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="610" y="350" font-weight="700">orbitPath (index)</text>
+          <text x="610" y="368">sgp4 × 361 over one period</text>
+          <text x="610" y="384">~0.3 ms → fading Line</text>
+          <line x1="560" y1="360" x2="598" y2="360" stroke="currentColor" stroke-width="1.4" marker-end="url(#d)"/>
+          <text x="579" y="354" text-anchor="middle" font-size="11">on select</text>
+
+          <text x="20" y="150" font-weight="700">every 2 h</text>
+          <text x="20" y="166">the pipeline writes a</text>
+          <text x="20" y="182">new version + manifest</text>
+          <text x="20" y="214" font-weight="700">every 10 min · on tab focus</text>
+          <text x="20" y="230">the page re-reads the manifest;</text>
+          <text x="20" y="246">new version → reload + swap,</text>
+          <text x="20" y="262">selection kept by NORAD id</text>
+        </svg>
+        <figcaption><b>Figure 3.1</b> Who holds what. Element sets cross the worker boundary once; afterwards only positions and velocities move, by transfer, and the GPU does the per-frame motion.</figcaption>
+      </figure>
+
+      <p><strong>Why the shader moves the points.</strong> Running SGP4 every frame would cost 7–10 ms of main-thread time per frame — most of a 60 Hz budget and more than a 240 Hz frame has. Instead the worker computes exact positions <em>p₀</em> and velocities <em>v₀</em> at one instant <em>t₀</em>, and the vertex shader, which runs on every vertex every frame anyway, draws each point at <em>p = p₀ + v₀Δt + ½aΔt²</em>, with the acceleration <em>a = −μp₀/|p₀|³</em> computed from the point's own position — point-mass gravity, μ = 398,600.4418 km³/s². Between ticks a satellite is therefore on a parabola tangent to its orbit. The residual grows with the cube of Δt: for a 400 km orbit, where the acceleration turns at about 0.01 m/s³, one second of extrapolation is wrong by a fraction of a millimetre and sixty seconds by about 350 m. The main thread's whole per-frame contribution is one number, Δt.</p>
+      <p><strong>The timing model.</strong> The engine ties two clocks together — real seconds, which limit how often the worker can finish, and simulation seconds, which the shader must bridge — with three rules. Ticks are spaced 1000 ms divided by the time rate, clamped between 33 ms and 1000 ms: one a second at real time, thirty a second from 30× upward, none while paused. A new request is never sent while one is unanswered, so a slow machine ticks less often rather than queueing up. And each request asks for positions not at "now" but at <em>now + rate × (round trip + interval ÷ 2)</em> — the simulation instant halfway through the time the answer will be on screen — so the shader extrapolates half an interval backward and then half forward, and the worst-case Δt is halved for free. At 3,600× that means ±60 simulated seconds and roughly 350 m of error for the lowest orbits, which is a fraction of a pixel at globe scale.</p>
+      <p>A jump — the user picking a date — is detected by comparing where the clock is with where the last request predicted it would be. The first version used a fixed tolerance of 1.5 simulated seconds, which at 3,600× is only 0.4 ms of real time: ordinary frame jitter tripped it, and the engine fired extra ticks. Jack's status bar read 36 Hz against a 30 Hz cap, which is how the bug was found; the tolerance is now the larger of 1.5 s and sixty real milliseconds scaled by the rate.</p>
+      <p><strong>Frames and shadow.</strong> The layer is a child of the <span class="mono">world</span> group in the Earth-centred inertial frame, exactly as Part 1 reserved. In the inertial view the group is fixed and the Earth rotates inside the shell of points; in the Earth-fixed view the group turns by −GMST and everything stays consistent with no per-object work. The worker emits positions already in the scene's axis order — the propagator's (x, y, z) as (x, z, −y) — so its buffers go straight to the GPU. Earth's shadow is a cylinder test in the vertex shader against the same world-rotated sun vector the Earth shader receives: an object behind the planet and within one Earth radius of the anti-sun axis is dimmed to 30% and cooled toward blue, with a soft edge of about 150 km.</p>
+      <p><strong>Picking and the readout.</strong> Hover picking runs at most 25 times a second while the pointer moves. It evaluates the same extrapolation on the CPU for every visible object, projects each through the camera, ignores anything whose line of sight passes through the Earth, and takes the nearest within nine pixels (twelve for a click; a press that travels more than five pixels is a drag, not a click). The card's live numbers come from the same sample: scene position back to ECI, ECI to Earth-fixed by GMST, then the iterative WGS84 conversion to geodetic latitude, longitude and height — the proper ellipsoidal conversion, added to <span class="mono">frames.ts</span> in this part, converging to double precision in four rounds.</p>
+      <p><strong>Depth scaling.</strong> After review, a point's size is its base size (3.4 px for payloads, 2.5 for debris) times <em>(17,000 km ÷ view depth)^0.6</em>, clamped between 0.6 and 4. True perspective (exponent 1) makes the near side of the shell ten times the far side; 0.6 grows the dots as the camera approaches without that imbalance, and tapers the shell far out instead of letting it fuse into a solid ring.</p>
+
+      <h3 id="p3-decisions"><span class="n">3.4</span>Decisions and alternatives considered</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Decision</th><th>Why</th><th>Alternative not taken</th></tr></thead>
+          <tbody>
+            <tr><td>Benchmark before designing</td><td>Five measured numbers replaced a week of guessing about worker pools.</td><td>Design the pool the plan implied and tune later.</td></tr>
+            <tr><td>One worker, plain JavaScript</td><td>7–10 ms for the whole catalogue; no coordination code; no COOP/COEP headers.</td><td>A worker pool (measured: unnecessary); satellite.js's WebAssembly build (5 ms, but its glue embeds the binary as a raw byte-string a bundler can corrupt — noted as an upgrade path); its pthreads build (slower at this size and needs cross-origin isolation).</td></tr>
+            <tr><td>Shader extrapolation with gravity</td><td>Per-frame cost is one uniform; sub-metre at every rate below 600×.</td><td>Propagate every frame (7–10 ms of main thread per frame); linear extrapolation only (thirty times worse at 3,600×); a Keplerian solver in the shader (more code for no visible gain).</td></tr>
+            <tr><td>Aim requests at the display midpoint</td><td>Halves the worst-case Δt at no cost.</td><td>Request "now" and only extrapolate forward.</td></tr>
+            <tr><td>Rate-aware jump tolerance</td><td>A fixed 1.5 s is 0.4 real ms at 3,600×; frame jitter tripped it.</td><td>Keep the fixed tolerance and cap the rate.</td></tr>
+            <tr><td>Main thread parses, worker builds records</td><td>The interface needs names and catalogue fields anyway; parsing is 10 ms; the worker gets only the 17 OMM columns.</td><td>Worker fetches and parses, then posts every column back — a second copy of everything.</td></tr>
+            <tr><td>Worker emits scene-frame coordinates</td><td>Buffers go straight to the GPU; the swizzle is free.</td><td>Emit ECI and swizzle on the main thread each tick.</td></tr>
+            <tr><td>CPU picking</td><td>Same maths as the draw; 1–2 ms; no extra render pass or read-back.</td><td>Render object ids to a texture and read the pixel — robust, more machinery.</td></tr>
+            <tr><td>Selection persists by catalogue number across snapshot swaps</td><td>Indices change between versions; catalogue numbers don't.</td><td>Drop the selection on refresh.</td></tr>
+            <tr><td>Filter by active catalogue vs debris clouds</td><td>Matches the plan's baseline (active by default, debris as a toggle) and the pipeline's group semantics.</td><td>Four type toggles — the codes are on the GPU already, available later.</td></tr>
+            <tr><td>Dark-rimmed discs</td><td>Readable over sunlit cloud and over black space without two point styles.</td><td>Additive glow — washes out on the day side.</td></tr>
+            <tr><td>No white in the satellite palette</td><td>Stars are white; after review the two were indistinguishable.</td><td>Keep white payloads and change the stars' shape — still one field of dots.</td></tr>
+            <tr><td>Depth-scaled points, exponent 0.6</td><td>Grow on approach without true perspective's near/far imbalance.</td><td>Fixed pixel size (the first cut); full 1/z.</td></tr>
+            <tr><td>Orbit line at 1 px, fading from the object</td><td>Clean; WebGL core lines are 1 px; the fade says "where it is going" without arrows.</td><td>Fat lines — a later choice if weight is wanted.</td></tr>
+            <tr><td>Hot-swap by polling the manifest</td><td>The page is meant to stay open; 2 KB every ten minutes; no server involved.</td><td>Reload the tab; a push channel (a server).</td></tr>
+            <tr><td>Remove the Milky Way</td><td>A 2.5-million-star count map cannot be made both sharp and smooth; Jack preferred none to a photograph.</td><td>Keep the 8192 map off by default; a photographic all-sky image.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="p3-measurements"><span class="n">3.5</span>Measurements</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Quantity</th><th>Value</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td>Build 19,247 propagator records</td><td class="num">~100 ms Node · 62 ms browser</td><td>json2satrec; 0 initialisation errors</td></tr>
+            <tr><td>SGP4, all objects, one instant</td><td class="num">7–10 ms JS · 5.2 ms WASM · 11–14 ms 4 threads</td><td>Node, warm; first JS call 54 ms</td></tr>
+            <tr><td>JS vs WASM positions</td><td class="num">7 × 10⁻¹⁰ km</td><td>Largest difference over 19,247 objects</td></tr>
+            <tr><td>Worker tick on Jack's PC</td><td class="num">6.9 ms</td><td>Status-bar reading at 3,600×</td></tr>
+            <tr><td>Frame rate with the layer</td><td class="num">240 fps</td><td>Jack's RTX 5070, 8k textures, 16,582 points</td></tr>
+            <tr><td>Load, Jack's PC (dev server, uncompressed)</td><td class="num">4.8 MB in 158 ms · parse 10 ms</td><td>1.09 MB gzipped in production</td></tr>
+            <tr><td>Main-thread work per tick</td><td class="num">~0.1 ms</td><td>Two 231 KB copies into GPU attributes</td></tr>
+            <tr><td>Hover pick</td><td class="num">1–2 ms</td><td>19,247 objects; at most 25 per second</td></tr>
+            <tr><td>Extrapolation error, LEO</td><td class="num">&lt; 1 mm at 1× · 1.6 m at 600× · 350 m at 3,600×</td><td>Third-order residual, jerk ≈ 0.01 m/s³; one pixel ≈ 30 km at the default view</td></tr>
+            <tr><td>Bundle</td><td class="num">669 KB (177 KB gzipped) · worker 21 KB</td><td>Three.js is most of it; satellite.js lives only in the worker</td></tr>
+            <tr><td>Main-thread heap after load</td><td class="num">~55 MB</td><td>Catalogue columns, Three.js, texture bookkeeping</td></tr>
+            <tr><td>Shown by default · with debris clouds</td><td class="num">16,582 · 19,247</td><td>Active catalogue · plus the three fragmentation clouds</td></tr>
+            <tr><td>Objects at 53° inclination · 43°</td><td class="num">5,156 · 3,627</td><td>Of which Starlink 5,134 · 3,620 — the two lines Jack saw</td></tr>
+            <tr><td>Snapshot hot-swap</td><td class="num">1 tested</td><td>Version 2117Z → 2240Z with the ISS selected throughout</td></tr>
+            <tr><td>New code</td><td class="num">9 files · 1 dependency</td><td>satellite.js 7.1; type check clean</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The two lines deserve their explanation, since the measurement is the answer. A satellite in a circular orbit inclined at <em>i</em> climbs to latitude <em>i</em>, turns, and comes back; at the turning point it moves purely east–west and lingers, so a constellation shell's density peaks sharply at ±<em>i</em> and thins toward the equator. Starlink's two largest shells fly at 53° and 43°. At 3,600× every one of those satellites crosses its turning latitude every 47 real seconds, and the peaks fuse into lines. They read a few degrees north of 53° and 43° — Glasgow, the Alps — because the viewer, looking from lower latitude at objects 550 km up, sees them projected against ground farther poleward. The mirror lines are over the southern oceans.</p>
+      <p>The embedded browser pane in which the layer was developed pauses animation frames between tool calls, so its own readings of frame rate and time-to-first-positions were meaningless (it reported one frame a second and a "first frame" of nine seconds); every frame-loop number above is Jack's, read from the status bar on his display, and the status bar was given a "Loaded" row for exactly that reason.</p>
+
+      <h3 id="p3-next"><span class="n">3.6</span>What this enables next</h3>
+      <p>The catalogue is in memory, indexed, and cheap to walk: search by name or number, grouping by constellation and owner, and "what is above the horizon here" are interface work over data the page already holds. Ground tracks and pass predictions for an observer need the topocentric conversions satellite.js already provides, run in the same worker. The full catalogue — rocket bodies and the rest of the debris — is a second pipeline client on the Part 2 pattern once Jack's Space-Track request is approved, and the layer will show 35,000 objects with the same architecture; the benchmark says one worker will still have room.</p>
+      <p>And nothing on the page assumes it is running on localhost. It reads a manifest and an immutable file with the cache headers object storage sends; the next time the project changes shape, it can be a URL.</p>
     </section>
 
     <section id="references">
@@ -392,7 +754,12 @@
         <li>Vallado, D. A. — Fundamentals of Astrodynamics and Applications: the GMST polynomial and the low-precision solar position algorithm (also Astronomical Almanac, section C).</li>
         <li>NIMA TR8350.2 — World Geodetic System 1984: ellipsoid constants.</li>
         <li>CelesTrak usage policy, T. S. Kelso, revised 26 March 2026. <a href="https://celestrak.org/usage-policy.php">celestrak.org/usage-policy.php</a></li>
-        <li>Three.js r186, Svelte 5.57, Vite 8.3, TypeScript 5.9, Node.js 24.19, Python 3.14.3, uv 0.12.13, NumPy 2.5.3, Pillow 12.3.0.</li>
+        <li>Kelso, T. S. — CelesTrak GP element sets (OMM, JSON) and SATCAT; data derived from the 18th Space Defense Squadron via Space-Track.org. <a href="https://celestrak.org/NORAD/elements/">celestrak.org/NORAD/elements</a></li>
+        <li>CCSDS 502.0-B-3 — Orbit Data Messages: the Orbit Mean-Elements Message (OMM) format carried through the snapshot verbatim.</li>
+        <li>Vallado, D. A., Crawford, P., Hujsak, R. &amp; Kelso, T. S. (2006) — Revisiting Spacetrack Report #3. AIAA 2006-6753. The SGP4/SDP4 reference implementation both propagators follow; Hoots, F. R. &amp; Roehrich, R. L. (1980), Spacetrack Report No. 3, is the original.</li>
+        <li>Rhodes, B. — sgp4 (Python), the reference C++ implementation with a vectorised interface; used by the pipeline's validator. MIT. <a href="https://pypi.org/project/sgp4/">pypi.org/project/sgp4</a></li>
+        <li>satellite.js 7.1 (S. Kandadai and contributors) — SGP4/SDP4 and coordinate transforms in JavaScript; used in the browser's propagation worker. MIT. <a href="https://github.com/shashwatak/satellite-js">github.com/shashwatak/satellite-js</a></li>
+        <li>Three.js r186, Svelte 5.57, Vite 8.3, TypeScript 5.9, Node.js 24.19, Python 3.14.3, uv 0.12.13, NumPy 2.5.3, Pillow 12.3.0, httpx 0.28.1, sgp4 2.27, satellite.js 7.1.0.</li>
       </ul>
     </section>
 
@@ -403,6 +770,7 @@
           <thead><tr><th>Date</th><th>Change</th></tr></thead>
           <tbody>
             <tr><td class="num">2026-09-11</td><td>Journal begun. Part 1, The Globe, written covering the framework build (commit 7a3e84d) and the review revisions (commit f16d9b8) as one account.</td></tr>
+            <tr><td class="num">2026-09-12</td><td>Part 2, The Orbit Pipeline, added (commit a0ba44a). Part 3, The Satellite Layer, added, covering the build and the review round as one account (commits 2749616, 05b5893). Part 1: postscript on the Milky Way's removal; the pending frame-rate measurement filled in. References extended for the propagators and the OMM standard.</td></tr>
           </tbody>
         </table>
       </div>

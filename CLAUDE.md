@@ -310,21 +310,22 @@ All three document types (plan, briefs, journal) use one visual family so they r
 | 0 | Game plan (pre-build) | 2026-09-11 | Game Plan artifact (link in §1) | — |
 | 1 | Framework: local site, globe, night sky, first UI | 2026-09-11 | `docs/briefs/01-framework.html` · https://claude.ai/code/artifact/341aff22-9767-47b6-ba8f-4c25eda26706 | Part 1 — The Globe |
 | 2 | Globe polish: 8k textures, clouds, Sun, HYG stars, Milky Way, controls | 2026-09-11 | `docs/briefs/02-globe-polish.html` · https://claude.ai/code/artifact/5bda8a5d-9661-4d3d-9c9c-2ef8edb6196d | Part 1 — The Globe |
-| 3 | Orbit pipeline: CelesTrak fetch discipline, sgp4 validation, snapshot, archive, hourly schedule | 2026-09-11 | `docs/briefs/03-orbit-pipeline.html` · https://claude.ai/code/artifact/41f64269-6dc4-4b45-9839-fe02ce9e2b54 | pending Jack's yes (would be Part 2 — The Orbit Pipeline) |
-| 4 | Satellite layer: worker SGP4, GPU points, hover/select/orbit/card, filters, hot-swap | 2026-09-11 | `docs/briefs/04-satellite-layer.html` · https://claude.ai/code/artifact/65925fba-5555-4a1e-a97f-49754d13c95b | pending Jack's yes (would be Part 3 — The Satellite Layer) |
+| 3 | Orbit pipeline: CelesTrak fetch discipline, sgp4 validation, snapshot, archive, hourly schedule | 2026-09-11 | `docs/briefs/03-orbit-pipeline.html` · https://claude.ai/code/artifact/41f64269-6dc4-4b45-9839-fe02ce9e2b54 | Part 2 — The Orbit Pipeline |
+| 4 | Satellite layer: worker SGP4, GPU points, hover/select/orbit/card, filters, hot-swap | 2026-09-11 | `docs/briefs/04-satellite-layer.html` · https://claude.ai/code/artifact/65925fba-5555-4a1e-a97f-49754d13c95b | Part 3 — The Satellite Layer |
 
 Commits: Stage 1 `7a3e84d`, Stage 2 `f16d9b8`, journal `d097609`, Stage 3 `a0ba44a`, Stage 4
 (see git log). Jack said "yes commit" at the end of Stage 1 → **commit at the end of every
 stage** (one commit per stage, message "Stage N: <name>"); still never push without being asked.
 
-Open with Jack after Stage 4: journal Parts 2 and 3 not yet approved; GitHub URL still
-pending; Space-Track — he has an account, needs the ODR before the public
+Open with Jack after Stage 4: GitHub URL still pending; Space-Track — he has an account, needs the ODR before the public
 snapshot can carry Space-Track data; credentials go in git-ignored `pipeline/.env`, never chat.
 
 Journal: `docs/journal/atmospheric-perspective-journal.html` ·
 https://claude.ai/code/artifact/52b246d3-75b9-42f9-88e2-5dfd3fb9de1e (redeploy this same file
 path from this conversation, or pass this URL as `url` from another, so the link never changes).
-Parts so far: 1 — The Globe (2026-09-11).
+Parts so far: 1 — The Globe (2026-09-11), 2 — The Orbit Pipeline and 3 — The Satellite Layer
+(both 2026-09-12; Part 1 carries a postscript on the Milky Way's removal). Figure ids used:
+markers a/aa/b/bb (Part 1), c/cc (Part 2), d/dd (Part 3) — pick fresh letters for Part 4.
 
 ## 11. Data source quick reference
 
