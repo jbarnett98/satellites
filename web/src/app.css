@@ -1,0 +1,161 @@
+/* Atmospheric Perspective — application chrome.
+   The globe is the page; the UI floats over it in a few quiet panels. Same type family as
+   the project documents (Barlow / IBM Plex Mono) so the whole project reads as one thing. */
+
+:root {
+  --bg: #04070c;
+  --panel: rgba(11, 16, 24, 0.72);
+  --panel-strong: rgba(11, 16, 24, 0.9);
+  --panel-border: rgba(168, 188, 214, 0.14);
+  --ink: #e6ebf3;
+  --muted: #8a97ab;
+  --faint: #5b6677;
+  --accent: #4fc6d0;
+  --accent-ink: #0b7580;
+  --accent-soft: rgba(79, 198, 208, 0.16);
+  --warn: #e8984f;
+  --live: #5fd38a;
+
+  --font-ui: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: 'Barlow Semi Condensed', 'Arial Narrow', var(--font-ui);
+  --font-mono: 'IBM Plex Mono', Consolas, 'Courier New', monospace;
+
+  --radius: 4px;
+  --gap: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- shared pieces ---- */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.eyebrow {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(168, 188, 214, 0.3);
+}
+
+.btn.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Segmented control: buttons share one border. */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.seg .btn {
+  border: 0;
+  border-radius: 0;
+  height: 28px;
+}
+
+.seg .btn + .btn {
+  border-left: 1px solid var(--panel-border);
+}
+
+/* Label / value pairs in the status bar. */
+.readout {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 14px;
+  align-items: baseline;
+}
+
+.readout dt {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.readout dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

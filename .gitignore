@@ -1,0 +1,21 @@
+# dependencies & builds
+node_modules/
+web/dist/
+web/.vite/
+*.local
+
+# data snapshots and raw downloads never go in git (they go to data/ locally, R2 later)
+data/
+!data/.gitkeep
+
+# python
+__pycache__/
+*.pyc
+.venv/
+pipeline/.venv/
+
+# editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

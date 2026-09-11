@@ -1,0 +1,13 @@
+{
+  "name": "atmospheric-perspective",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Atmospheric Perspective — a real-time globe of everything in Earth orbit. Root scripts delegate to web/ and pipeline/.",
+  "scripts": {
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "preview": "npm --prefix web run preview",
+    "check": "npm --prefix web run check",
+    "stars": "py pipeline/scripts/build_stars.py"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": [
+        "C:\\Users\\Jack\\Downloads\\reboot\\Personal\\Satellite Platform\\web\\node_modules\\vite\\bin\\vite.js",
+        "C:\\Users\\Jack\\Downloads\\reboot\\Personal\\Satellite Platform\\web"
+      ],
+      "port": 5173
+    }
+  ]
+}

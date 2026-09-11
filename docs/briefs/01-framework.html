@@ -1,0 +1,436 @@
+<title>Stage 01 · The Framework</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F4F6F9; --surface: #FFFFFF; --ink: #1A2230; --muted: #5B6677; --line: #D3DAE3;
+    --accent: #0B7580; --accent-soft: #DFEFF0; --amber: #B45A10; --amber-soft: #FBEEDD;
+    --green: #2F7D4F; --green-soft: #E3F2E8; --code-bg: #EAEFF4; --shadow: 0 1px 2px rgba(26,34,48,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+      --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+      --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+    --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+    --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Source Serif 4", Georgia, serif; font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 96px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 48px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px 16px 64px; } nav.toc { position: static !important; } }
+  header.mast { grid-column: 1 / -1; border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+  .eyebrow { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 46px; line-height: 1.02; margin: 8px 0 12px; text-wrap: balance; }
+  .lede { font-size: 19px; max-width: 66ch; margin: 0 0 20px; }
+  .telemetry { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.7; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 24px; font-variant-numeric: tabular-nums; }
+  .telemetry span { color: var(--muted); } .telemetry b { font-weight: 500; color: var(--ink); }
+  nav.toc { position: sticky; top: 24px; align-self: start; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 600; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--ink); }
+  nav.toc .toc-head { margin-bottom: 8px; }
+  article { max-width: 760px; min-width: 0; }
+  section { padding: 12px 0 28px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  section:last-of-type { border-bottom: 0; }
+  h2 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 30px; line-height: 1.1; margin: 8px 0 14px; text-wrap: balance; }
+  h3 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 20px; line-height: 1.2; margin: 26px 0 8px; text-wrap: balance; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; max-width: 70ch; } li { margin-bottom: 5px; }
+  strong { font-weight: 600; }
+  code, .mono { font-family: "IBM Plex Mono", Consolas, monospace; font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+  pre { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 14px; margin: 0 0 14px; overflow-x: auto; white-space: pre; }
+  pre code { background: none; padding: 0; font-size: inherit; } .annot { color: var(--muted); }
+  .note, .warn, .done { margin: 18px 0 20px; padding: 12px 16px 6px; max-width: 70ch; border-top: 2px solid var(--accent); background: var(--accent-soft); }
+  .warn { border-top-color: var(--amber); background: var(--amber-soft); }
+  .done { border-top-color: var(--green); background: var(--green-soft); }
+  .note .eyebrow { color: var(--accent); margin-bottom: 4px; } .warn .eyebrow { color: var(--amber); margin-bottom: 4px; } .done .eyebrow { color: var(--green); margin-bottom: 4px; }
+  .note p:last-child, .warn p:last-child, .done p:last-child { margin-bottom: 8px; }
+  .tablewrap { overflow-x: auto; margin: 6px 0 18px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.45; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 8px; border-radius: 3px; white-space: nowrap; }
+  .pill.live { background: var(--green-soft); color: var(--green); }
+  .pill.partial { background: var(--accent-soft); color: var(--accent); }
+  .pill.todo { background: var(--code-bg); color: var(--muted); }
+  .pill.risk { background: var(--amber-soft); color: var(--amber); }
+  .opt { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .opt:last-of-type { border-bottom: 1px solid var(--line); }
+  .opt .o-key { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 26px; line-height: 1; color: var(--accent); }
+  .opt h4 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-size: 19px; margin: 0 0 6px; }
+  .opt p { margin-bottom: 6px; }
+  .opt .tradeoff { font-size: 15px; color: var(--muted); }
+  figure { margin: 18px 0 22px; }
+  figure svg { max-width: 100%; height: auto; display: block; color: var(--ink); background: var(--surface); border: 1px solid var(--line); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; max-width: 70ch; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; }
+  .tree { font-size: 12.5px; }
+  .tree .d { color: var(--accent); font-weight: 500; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">Atmospheric Perspective · Stage brief 01 · 11 Sep 2026</div>
+    <h1>The framework: a globe that keeps real time</h1>
+    <p class="lede">The site exists and runs locally. It draws a WGS84 Earth lit by the real Sun, turning under 9,096 real stars, with a clock you can pause, warp and jump, a reference-frame toggle, a layers menu and a status readout. No satellites yet — this stage was about getting every foundation they will sit on right.</p>
+    <div class="telemetry" aria-label="Stage numbers">
+      <div><span>SOURCE FILES </span><b>25</b> <span>· LINES </span><b>1,878</b></div>
+      <div><span>BUNDLE (gzip) </span><b>160 KB JS</b> <span>+ </span><b>1.7 KB CSS</b></div>
+      <div><span>TYPE CHECK </span><b>0 errors</b> <span>· </span><b>0 warnings</b></div>
+      <div><span>STARS </span><b>9,096</b> <span>· TEXTURES </span><b>3.2 MB</b></div>
+      <div><span>TOOLCHAIN </span><b>Node 24.19 · Vite 8.3 · Svelte 5.57 · Three r186 · Py 3.14</b></div>
+      <div><span>FRAME RATE </span><b>unmeasured</b> <span>— see risks</span></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow toc-head">Contents</div>
+    <ol>
+      <li><a href="#where">Where the project is</a></li>
+      <li><a href="#completed">What we just completed</a></li>
+      <li><a href="#structure">Under the hood: structure</a></li>
+      <li><a href="#build">Under the hood: how it's built</a></li>
+      <li><a href="#runtime">Under the hood: one frame</a></li>
+      <li><a href="#decisions">Decisions taken</a></li>
+      <li><a href="#next">Immediate next avenues</a></li>
+      <li><a href="#risks">Open questions and risks</a></li>
+      <li><a href="#run">Running it</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section id="where">
+      <h2>Where the project is</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Component</th><th>State</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Dev site (localhost)</td><td><span class="pill live">Running</span></td><td>Vite dev server on <span class="mono">http://localhost:5173</span>; production build verified.</td></tr>
+            <tr><td>Globe: Earth</td><td><span class="pill live">Live</span></td><td>WGS84 ellipsoid, NASA day + night textures, sun-lit shader with terminator, ocean glint, limb tint.</td></tr>
+            <tr><td>Globe: atmosphere</td><td><span class="pill live">Live</span></td><td>Additive back-face halo, day/dusk/night colour response. Artistic, not a physical scattering model.</td></tr>
+            <tr><td>Night sky</td><td><span class="pill live">Live</span></td><td>Yale BSC5 catalogue placed at true RA/Dec in the inertial frame; magnitude → size/alpha, B−V → colour.</td></tr>
+            <tr><td>Time model</td><td><span class="pill live">Live</span></td><td>Live / paused / 1×–3600× / jump to date. Everything on screen derives from one <span class="mono">simTime</span>.</td></tr>
+            <tr><td>Reference frames</td><td><span class="pill live">Live</span></td><td>Inertial (sky fixed, Earth turns) and Earth-fixed (Earth fixed, sky turns), switchable without a visual jump.</td></tr>
+            <tr><td>UI chrome</td><td><span class="pill partial">Initial</span></td><td>Top bar, time controls, layers panel, status bar with credits. Enough to drive what exists; no selection or search yet.</td></tr>
+            <tr><td>Pipeline</td><td><span class="pill partial">One script</span></td><td><span class="mono">build_stars.py</span> converts the star catalogue. No CelesTrak fetcher, no snapshot format yet.</td></tr>
+            <tr><td>Satellites</td><td><span class="pill todo">Not started</span></td><td>The scene graph has a reserved place for them (<span class="mono">world</span>, the inertial group).</td></tr>
+            <tr><td>Hosting</td><td><span class="pill todo">Local only</span></td><td>Nothing deployed. No Cloudflare account touched yet.</td></tr>
+            <tr><td>Repository</td><td><span class="pill partial">Initialised</span></td><td><span class="mono">git init</span> done on <span class="mono">main</span>; nothing committed yet — awaiting your go.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="completed">
+      <h2>What we just completed</h2>
+      <p>Session zero plus the visual foundation, in one pass:</p>
+      <ul>
+        <li><strong>Toolchain.</strong> Installed Node.js 24.19 LTS (winget). Python 3.14 was already present via the <span class="mono">py</span> launcher. Git was present.</li>
+        <li><strong>Assets.</strong> Downloaded NASA's Blue Marble (Dec 2004, with topography and bathymetry, 5400×2700) and Black Marble 2016 night lights (3600×1800), both public domain, and the Yale Bright Star Catalogue (BSC5, 9,110 records) into <span class="mono">data/raw/</span>.</li>
+        <li><strong>First pipeline script.</strong> <span class="mono">build_stars.py</span> parses BSC5's fixed-width records (standard library only), drops the 14 entries with no position, and writes a 287 KB column-oriented <span class="mono">stars.json</span>. Sirius comes out brightest at V = −1.46, which is the right answer.</li>
+        <li><strong>The web app.</strong> Svelte 5 + Vite 8 + TypeScript 5.9 + Three.js r186. Custom shaders for the Earth, the atmosphere and the stars; no Three.js lights anywhere — all lighting derives from one computed sun vector.</li>
+        <li><strong>Astronomy.</strong> Julian date, Greenwich Mean Sidereal Time (Vallado's polynomial, the same one satellite.js uses, so the Earth and the future satellites will agree on where Greenwich is), and the Astronomical Almanac low-precision Sun.</li>
+        <li><strong>UI.</strong> Wordmark and live UTC clock with a LIVE / SIM / PAUSED badge, inertial ↔ Earth-fixed toggle, layers panel (day/night, city lights, atmosphere, stars, graticule), time controls (now, pause, rates, jump), status bar (camera lat/lon/altitude, sub-solar point, GMST, fps, star count, data credits).</li>
+        <li><strong>Verification.</strong> <span class="mono">svelte-check</span>: 0 errors. Production build: 160 KB gzipped. Sub-solar point at 16:06 UTC on 11 Sep came out at 4.4° N, 62.5° W — the right latitude for the date and the right longitude for the hour. WebGL is running on the RTX 5070 via ANGLE/D3D11.</li>
+      </ul>
+      <div class="done">
+        <div class="eyebrow">Working principles honoured</div>
+        <p>No server, no database, no Docker, no framework beyond Svelte + Three. One Python script with zero dependencies. Every asset credited in the status bar. Desktop-only layout, as agreed.</p>
+      </div>
+    </section>
+
+    <section id="structure">
+      <h2>Under the hood: structure</h2>
+      <p>The repository is a monorepo with three top-level concerns — the site, the pipeline, the documents — plus a git-ignored <span class="mono">data/</span> folder for anything downloaded or generated. Root-level <span class="mono">package.json</span> only holds convenience scripts that delegate into <span class="mono">web/</span>.</p>
+<pre class="tree"><code><span class="d">Satellite Platform/</span>
+├─ CLAUDE.md                        <span class="annot">standing brief: rules, decisions, stage log</span>
+├─ README.md · package.json · .gitignore
+├─ .claude/launch.json              <span class="annot">how the dev server is launched from the Claude app</span>
+│
+├─ <span class="d">web/</span>                             <span class="annot">the site (Svelte 5 · Vite 8 · TypeScript · Three.js)</span>
+│  ├─ index.html                    <span class="annot">shell page; loads fonts and /src/main.ts</span>
+│  ├─ package.json · vite.config.ts · svelte.config.js · tsconfig.json
+│  ├─ <span class="d">public/</span>                       <span class="annot">served verbatim at /</span>
+│  │  ├─ textures/earth-day-blue-marble-5400.jpg      <span class="annot">2.6 MB</span>
+│  │  ├─ textures/earth-night-black-marble-3600.jpg   <span class="annot">0.8 MB</span>
+│  │  └─ data/stars.json                              <span class="annot">287 KB, built by the pipeline</span>
+│  └─ <span class="d">src/</span>
+│     ├─ main.ts                    <span class="annot">mounts App</span>
+│     ├─ App.svelte                 <span class="annot">layout: canvas underneath, four floating chrome regions</span>
+│     ├─ app.css                    <span class="annot">UI tokens (dark), shared .panel/.btn/.seg/.readout</span>
+│     ├─ <span class="d">lib/astro/</span>                 <span class="annot">pure maths, no rendering</span>
+│     │  ├─ time.ts                 <span class="annot">Julian date, GMST, angle wrapping</span>
+│     │  ├─ sun.ts                  <span class="annot">Sun direction (ECI), sub-solar point</span>
+│     │  └─ frames.ts               <span class="annot">WGS84 constants, ECI ↔ scene mapping, RA/Dec → scene</span>
+│     ├─ <span class="d">lib/globe/</span>                 <span class="annot">Three.js, knows nothing about Svelte</span>
+│     │  ├─ Globe.ts                <span class="annot">renderer, camera, controls, scene graph, frame loop</span>
+│     │  ├─ earth.ts                <span class="annot">ellipsoid mesh + day/night shader + texture loading</span>
+│     │  ├─ atmosphere.ts           <span class="annot">back-face additive halo shell</span>
+│     │  ├─ stars.ts                <span class="annot">catalogue → point cloud, magnitude/colour mapping</span>
+│     │  └─ graticule.ts            <span class="annot">15° lat/lon grid</span>
+│     ├─ <span class="d">lib/state/</span>                 <span class="annot">Svelte 5 runes; the only shared mutable state</span>
+│     │  ├─ clock.svelte.ts         <span class="annot">simTime, live/rate/pause, jump</span>
+│     │  ├─ settings.svelte.ts      <span class="annot">frame mode, layer toggles, panel open/closed</span>
+│     │  └─ status.svelte.ts        <span class="annot">read-only numbers the globe reports back</span>
+│     ├─ lib/format.ts              <span class="annot">UTC, sidereal, lat/lon, km formatting</span>
+│     └─ <span class="d">ui/</span>                        <span class="annot">Svelte components, one per chrome region</span>
+│        ├─ GlobeCanvas.svelte      <span class="annot">owns the &lt;canvas&gt;; bridges state ↔ Globe</span>
+│        ├─ TopBar.svelte · TimeControls.svelte · LayersPanel.svelte · StatusBar.svelte
+│
+├─ <span class="d">pipeline/</span>                        <span class="annot">Python 3.14, stdlib only so far</span>
+│  └─ scripts/build_stars.py        <span class="annot">BSC5 fixed-width → stars.json</span>
+│
+├─ <span class="d">docs/</span>
+│  ├─ briefs/01-framework.html      <span class="annot">this document</span>
+│  ├─ journal/                      <span class="annot">(empty until you approve Part 1)</span>
+│  └─ plan/                         <span class="annot">(reserved for a copy of the game plan)</span>
+│
+└─ <span class="d">data/</span>                            <span class="annot">git-ignored</span>
+   └─ raw/                          <span class="annot">the three downloads, untouched originals</span></code></pre>
+      <p>The dependency direction is strict and worth keeping: <span class="mono">ui/</span> → <span class="mono">state/</span> → <span class="mono">globe/</span> → <span class="mono">astro/</span>. The astronomy modules import nothing but Three's <span class="mono">Vector3</span>; the globe modules never import Svelte; the UI never touches Three directly except in <span class="mono">GlobeCanvas</span>, which is the one deliberate bridge. When the satellite layer arrives it slots into <span class="mono">globe/</span> with a worker beside it, and gets its own <span class="mono">state/</span> module.</p>
+    </section>
+
+    <section id="build">
+      <h2>Under the hood: how it's built</h2>
+      <h3>The toolchain, and what each piece does</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Tool</th><th>Version</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>Node.js / npm</td><td class="num">24.19.0 / 11.17</td><td>Runs the build tools. Nothing of ours runs on Node in production — the output is static files.</td></tr>
+            <tr><td>Vite</td><td class="num">8.3.0</td><td>Dev server with hot module replacement (edit a file, the browser updates in place) and the production bundler (Rolldown under the hood). Also serves <span class="mono">public/</span> verbatim.</td></tr>
+            <tr><td>Svelte</td><td class="num">5.57.0</td><td>Compiles <span class="mono">.svelte</span> components into small imperative JavaScript at build time; the "runes" (<span class="mono">$state</span>, <span class="mono">$derived</span>, <span class="mono">$effect</span>) give fine-grained reactivity without a virtual DOM. Runtime cost is a few KB.</td></tr>
+            <tr><td>TypeScript</td><td class="num">5.9</td><td>Types across everything, checked by <span class="mono">svelte-check</span>. (TypeScript 7 — the new Go-based compiler — is out, but 5.x is what the Svelte tooling targets today.)</td></tr>
+            <tr><td>Three.js</td><td class="num">r186</td><td>WebGL2 scene graph, camera, <span class="mono">OrbitControls</span>, geometry and texture plumbing. We write our own shaders; Three handles uniforms, matrices and colour management.</td></tr>
+            <tr><td>Python</td><td class="num">3.14.3</td><td>The pipeline. Zero third-party packages so far, so no <span class="mono">uv</span> project yet; that arrives with the first real dependency.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Two commands, two outputs</h3>
+      <p><span class="mono">npm run dev</span> starts Vite: it serves <span class="mono">index.html</span>, compiles each <span class="mono">.svelte</span>/<span class="mono">.ts</span> file on demand as the browser requests it, and pushes changes over a websocket. <span class="mono">npm run build</span> runs the same compiler over everything once, tree-shakes Three.js down to the parts we import, minifies, and writes <span class="mono">web/dist/</span>: one HTML file, one CSS file, one JS file (160 KB gzipped, Three.js included), plus copies of <span class="mono">public/</span>. That <span class="mono">dist/</span> folder is the entire deployable site — later, Cloudflare Pages just hosts it.</p>
+
+      <h3>How the pipeline feeds the site</h3>
+      <p>The pattern that will carry every future dataset is already in place in miniature: a Python script reads a raw upstream file from <span class="mono">data/raw/</span>, validates and reshapes it, and writes a compact, column-oriented JSON into <span class="mono">web/public/data/</span>, where the site fetches it as a static file. The star file stores <span class="mono">ra[]</span>, <span class="mono">dec[]</span>, <span class="mono">mag[]</span>, <span class="mono">bv[]</span> as parallel arrays rather than one object per star — smaller, faster to parse, and the browser copies each array straight into a GPU attribute. The satellite snapshot will use the same shape.</p>
+    </section>
+
+    <section id="runtime">
+      <h2>Under the hood: one frame</h2>
+      <p>Everything visible is a pure function of one number, <span class="mono">simTime</span>. The browser asks for a new frame roughly 60 times a second, and each time the globe runs the same sequence:</p>
+
+      <figure>
+        <svg viewBox="0 0 980 470" role="img" aria-label="Per-frame data flow: the clock produces simTime; from it the globe derives Julian date, sidereal time and the Sun vector; those drive the world and Earth group rotations and the shader uniforms; the sky is rendered with a rotation-only camera, then the world; every 200 ms a status object flows back to the Svelte UI, while settings flow from the UI into the globe through effects." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+          </defs>
+
+          <!-- Svelte column -->
+          <rect x="20" y="40" width="200" height="390" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <text x="32" y="60" font-weight="700" font-size="13">Svelte (UI thread)</text>
+
+          <rect x="34" y="80" width="172" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="44" y="98" font-weight="700">clock</text>
+          <text x="44" y="114">live · rate · simTime</text>
+          <text x="44" y="130" opacity=".7">tick() once per frame</text>
+
+          <rect x="34" y="160" width="172" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="44" y="178" font-weight="700">settings</text>
+          <text x="44" y="194">frame · layers</text>
+          <text x="44" y="210" opacity=".7">$effect → globe.setX()</text>
+
+          <rect x="34" y="240" width="172" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="44" y="258" font-weight="700">status</text>
+          <text x="44" y="274">fps · GMST · sub-solar</text>
+          <text x="44" y="290">camera lat / lon / alt</text>
+
+          <rect x="34" y="330" width="172" height="80" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="44" y="348" font-weight="700">components</text>
+          <text x="44" y="364">TopBar · TimeControls</text>
+          <text x="44" y="380">LayersPanel · StatusBar</text>
+          <text x="44" y="396" opacity=".7">read state, render DOM</text>
+
+          <!-- Globe.tick column -->
+          <rect x="280" y="40" width="380" height="390" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="292" y="60" font-weight="700" font-size="13">Globe.tick()  — Three.js, no Svelte</text>
+
+          <text x="292" y="92" font-weight="700">1  derive</text>
+          <text x="310" y="110" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">jd    = julianDate(simTime)</text>
+          <text x="310" y="126" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">θ     = gmst(jd)</text>
+          <text x="310" y="142" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">sun   = sunState(jd)  → ECI unit vector</text>
+
+          <text x="292" y="176" font-weight="700">2  pose the scene graph</text>
+          <text x="310" y="194" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">world.rotation.y      = ecef ? −θ : 0</text>
+          <text x="310" y="210" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">earthGroup.rotation.y = θ</text>
+          <text x="310" y="226" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">starRoot.rotation.y   = world.rotation.y</text>
+          <text x="310" y="242" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">camera.position rotated by Δ on frame switch</text>
+
+          <text x="292" y="276" font-weight="700">3  feed the shaders</text>
+          <text x="310" y="294" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">uSunDir    = eciToScene(sun) ⟲ world</text>
+          <text x="310" y="310" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">uCameraPos = camera.position</text>
+
+          <text x="292" y="344" font-weight="700">4  render twice</text>
+          <text x="310" y="362">clear → sky scene (rotation-only camera)</text>
+          <text x="310" y="378">→ clear depth → world scene</text>
+
+          <text x="292" y="410" font-weight="700">5  every 200 ms</text>
+          <text x="400" y="410">emit status → UI</text>
+
+          <!-- GPU column -->
+          <rect x="720" y="40" width="240" height="390" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <text x="732" y="60" font-weight="700" font-size="13">GPU (custom GLSL)</text>
+
+          <rect x="734" y="80" width="212" height="88" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="744" y="98" font-weight="700">Earth shader</text>
+          <text x="744" y="114">smoothstep terminator ±6°</text>
+          <text x="744" y="130">day · night lights · Lambert</text>
+          <text x="744" y="146">ocean glint · limb tint</text>
+          <text x="744" y="162" opacity=".7">2 textures, 6 uniforms</text>
+
+          <rect x="734" y="186" width="212" height="72" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="744" y="204" font-weight="700">Atmosphere shader</text>
+          <text x="744" y="220">back faces only, additive</text>
+          <text x="744" y="236">glow ∝ depth into halo</text>
+          <text x="744" y="252" opacity=".7">dims at night, warms at dusk</text>
+
+          <rect x="734" y="276" width="212" height="72" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="744" y="294" font-weight="700">Star shader</text>
+          <text x="744" y="310">9,096 points · size ∝ magnitude</text>
+          <text x="744" y="326">Gaussian core, additive</text>
+          <text x="744" y="342" opacity=".7">separate scene, no depth</text>
+
+          <rect x="734" y="366" width="212" height="46" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="744" y="384" font-weight="700">Graticule</text>
+          <text x="744" y="400">line segments, 15° grid</text>
+
+          <!-- arrows -->
+          <line x1="206" y1="111" x2="278" y2="111" style="stroke:var(--accent)" stroke-width="2" marker-end="url(#aa)"/>
+          <text x="242" y="103" text-anchor="middle" font-size="11" style="fill:var(--accent)" font-weight="700">simTime</text>
+
+          <line x1="206" y1="191" x2="278" y2="191" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <text x="242" y="183" text-anchor="middle" font-size="11">on change</text>
+
+          <line x1="278" y1="271" x2="206" y2="271" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <text x="242" y="263" text-anchor="middle" font-size="11">5 Hz</text>
+
+          <line x1="660" y1="124" x2="732" y2="124" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <line x1="660" y1="222" x2="732" y2="222" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <line x1="660" y1="312" x2="732" y2="312" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <text x="696" y="116" text-anchor="middle" font-size="11">uniforms</text>
+
+          <line x1="120" y1="302" x2="120" y2="328" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <line x1="120" y1="222" x2="120" y2="238" stroke="currentColor" stroke-width="1" opacity=".4"/>
+        </svg>
+        <figcaption>One frame. State flows right along the accent arrow; only a throttled status object flows back. The globe never reads Svelte state directly — it is handed a time source and a handful of setters.</figcaption>
+      </figure>
+
+      <h3>The scene graph and the two frames</h3>
+      <p>Scene units are kilometres and the layout is Earth-centred inertial (ECI), remapped to Three's y-up: <span class="mono">scene.x = eci.x, scene.y = eci.z, scene.z = −eci.y</span>. That mapping is right-handed, puts north up, and — not by accident — makes east longitude increase in exactly the direction an equirectangular texture wraps onto Three's sphere, so the Earth needs no texture offset: rotate the mesh by GMST about y and Greenwich lands where it should.</p>
+      <p>Two groups do all the work. <span class="mono">earthGroup</span> holds the Earth mesh, the atmosphere shell and the graticule, is scaled by 6356.752 / 6378.137 in y (so the whole planet is a WGS84 ellipsoid, not a sphere), and rotates by GMST every frame. Its parent, <span class="mono">world</span>, is the inertial frame: rotation zero in the inertial view. Switching to Earth-fixed sets <span class="mono">world.rotation.y = −GMST</span>, which exactly cancels the Earth's spin — and the camera is rotated by the same delta at that instant so the picture doesn't jump. Satellites will be children of <span class="mono">world</span>, because that is the frame their propagator works in.</p>
+      <p>The stars live in a second scene rendered first, through a camera that copies the main camera's rotation but never its position. They are therefore at infinity regardless of zoom and never touch the depth buffer. The depth buffer is cleared between the two passes, so the Earth always occludes the sky behind it.</p>
+
+      <h3>Lighting without lights</h3>
+      <p>There are no Three.js light objects. The Sun's direction for the current <span class="mono">simTime</span> is computed once per frame (mean longitude, mean anomaly, ecliptic longitude, obliquity — a dozen lines), converted to scene space, and passed to both the Earth and atmosphere shaders as a uniform. The Earth fragment shader computes <span class="mono">dot(normal, sun)</span> per pixel: a <span class="mono">smoothstep</span> over ±0.10 gives a ~12° twilight band; the day side gets Lambert shading plus a warm push near the terminator, a specular glint where the Blue Marble is blue (oceans), and a blue tint toward the limb; the night side shows a faint 3.5% of the day texture plus Black Marble's city lights tinted sodium-orange. The atmosphere shell is drawn back-face-only with additive blending: because the Earth is drawn first, only the ring of shell outside the planet's disc survives the depth test, and that ring is the glow.</p>
+
+      <h3>The clock</h3>
+      <p><span class="mono">clock.tick()</span> is called by the globe once per frame. In live mode it copies <span class="mono">Date.now()</span>; otherwise it adds real elapsed milliseconds × rate. Jumping to a date sets the time and pauses. Because every displayed quantity is recomputed from <span class="mono">simTime</span> each frame, 3,600× time-warp is just a bigger number — nothing else changes.</p>
+    </section>
+
+    <section id="decisions">
+      <h2>Decisions taken this stage</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Decision</th><th>Why</th><th>Alternative not taken</th></tr></thead>
+          <tbody>
+            <tr><td>Scene units = kilometres</td><td>Altitudes, radii and later satellite state vectors read directly; float32 precision is ample to GEO.</td><td>Earth radii as unit (cleaner numbers, constant conversions everywhere).</td></tr>
+            <tr><td>WGS84 ellipsoid via group scale</td><td>One line makes the Earth, atmosphere and graticule all correctly oblate; geodetic maths later uses the same constants.</td><td>Sphere at mean radius (0.3% wrong at the poles).</td></tr>
+            <tr><td>Render in ECI, rotate the Earth</td><td>Satellites will live in ECI natively; orbits close on themselves; frame toggle is one rotation.</td><td>Earth-fixed scene with satellites rotated each frame.</td></tr>
+            <tr><td>Stars in a separate scene</td><td>Infinite distance without depth-buffer tricks or a huge far plane.</td><td>Skybox sphere at large radius in the main scene.</td></tr>
+            <tr><td>Real star catalogue, not a texture</td><td>288 KB of real data beats a 2–16 MB picture; stars are at true positions; it fits the project's data ethos.</td><td>NASA Deep Star Map texture (prettier Milky Way, large file).</td></tr>
+            <tr><td>Custom shaders, no Three lights</td><td>Day/night blending, terminator and halo are impossible with stock materials; full control of the look.</td><td>MeshStandardMaterial + DirectionalLight (no night lights, no terminator control).</td></tr>
+            <tr><td>Stdlib-only Python script</td><td>Zero dependencies means zero setup; <span class="mono">uv</span> arrives when a real dependency does.</td><td>Start a <span class="mono">uv</span> project now.</td></tr>
+            <tr><td>Pin TypeScript 5.x</td><td>Svelte tooling targets 5.x; TypeScript 7 (Go) is too new for the toolchain.</td><td>Take TS 7.0.2.</td></tr>
+            <tr><td>Column-oriented JSON for data</td><td>Smaller, faster to parse, maps 1:1 onto GPU attributes; the pattern the satellite snapshot will follow.</td><td>Array of objects.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="next">
+      <h2>Immediate next avenues</h2>
+      <p>Four directions are open. They are not mutually exclusive, but each is a coherent stage on its own.</p>
+
+      <div class="opt">
+        <div class="o-key">A</div>
+        <div>
+          <h4>The satellite data pipeline</h4>
+          <p>Register on Space-Track (for later), write the CelesTrak fetcher with the correct one-download-per-update discipline (check <span class="mono">jsonDir.php</span>, download changed groups once, treat 403 as "wait"), validate every element set with Python's <span class="mono">sgp4</span>, join SATCAT metadata, and define the column-oriented snapshot format the browser will load. Start the daily archive.</p>
+          <p class="tradeoff">Trade-off: nothing new appears on screen at the end of this stage, but every later stage depends on it, and the archive clock only starts when it runs. First real Python dependency → <span class="mono">uv</span> project.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">B</div>
+        <div>
+          <h4>The satellite layer, with a hand-made test set</h4>
+          <p>Build the browser side first: satellite.js in a Web Worker, positions + velocities to a typed array, extrapolation on the main thread, a point cloud in <span class="mono">world</span>, orbit path on selection — driven by a small static file of a dozen element sets (ISS, Hubble, a GPS bird, a Starlink) copied in by hand.</p>
+          <p class="tradeoff">Trade-off: the most visible progress, and it lets us design the rendering and picking with real motion — but the test file will go stale within days and A still has to happen before anything is "real time".</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">C</div>
+        <div>
+          <h4>Globe polish</h4>
+          <p>Convert textures to WebP (and add an 8k option), a specular/ocean mask instead of the blue-minus-red heuristic, a subtle cloud layer, camera fly-to and keyboard shortcuts, a "star brightness" setting, self-hosted fonts.</p>
+          <p class="tradeoff">Trade-off: makes the centrepiece more beautiful now, at the cost of delaying the thing the platform is for. Any item here can also be folded into a later stage.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">D</div>
+        <div>
+          <h4>First deployment</h4>
+          <p>Create the public GitHub repo, connect Cloudflare Pages, and put what exists at a real URL. Establishes the deploy path while the site is still simple.</p>
+          <p class="tradeoff">Trade-off: cheap and de-risks hosting early, but publishes a globe with nothing orbiting it. Pairs naturally with A or B as a half-stage.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="risks">
+      <h2>Open questions and risks</h2>
+      <div class="warn">
+        <div class="eyebrow">Needs your eyes</div>
+        <p><strong>Frame rate is unmeasured.</strong> The embedded browser pane pauses <span class="mono">requestAnimationFrame</span> whenever it isn't actively displayed, so the fps counter read 1–4 there and cannot be trusted. WebGL is confirmed to be on the RTX 5070, and the scene is two 128-segment spheres and 9k points, so I expect a solid 60 — but please open <span class="mono">http://localhost:5173</span> in your own browser and read the "Render" line in the status bar. That number becomes the baseline for the satellite layer.</p>
+      </div>
+      <ul>
+        <li><strong>Texture weight.</strong> 3.2 MB of JPEG is fine on localhost and acceptable for desktop, but WebP would roughly halve it. Deferred to polish.</li>
+        <li><strong>Fonts from Google.</strong> Fine for development; self-host before deployment for privacy and offline use.</li>
+        <li><strong>Star visibility is calibrated by eye</strong> in a downscaled capture; the size and alpha curves may want a nudge once you see them at 1:1. A user-facing brightness control is a cheap addition.</li>
+        <li><strong>Ellipsoid normals</strong> use the plain model matrix rather than the inverse transpose — a 0.3% error that is invisible, noted for honesty.</li>
+        <li><strong>Atmosphere thickness</strong> is tuned for a distant camera; the limb-depth threshold (0.30) is an approximation that softens when you zoom close. A per-frame exact threshold is a small follow-up.</li>
+        <li><strong>Hot reload re-creates the WebGL context.</strong> Expected with Vite; harmless in development, but it means the camera resets on every code change. A "remember camera" dev nicety is possible.</li>
+        <li><strong>Star catalogue depth.</strong> BSC5 stops around V ≈ 6.5 (naked-eye limit). If a denser sky is ever wanted, the HYG database (120k stars) drops into the same script.</li>
+        <li><strong>Nothing is committed.</strong> The repo is initialised on <span class="mono">main</span> with a <span class="mono">.gitignore</span> that excludes <span class="mono">data/</span>, <span class="mono">node_modules/</span> and <span class="mono">dist/</span>; textures and <span class="mono">stars.json</span> (3.5 MB) would be committed as static assets unless you prefer otherwise.</li>
+      </ul>
+    </section>
+
+    <section id="run">
+      <h2>Running it</h2>
+<pre><code><span class="annot"># from the repo root</span>
+npm run dev        <span class="annot"># dev server → http://localhost:5173</span>
+npm run check      <span class="annot"># svelte-check / TypeScript</span>
+npm run build      <span class="annot"># production bundle → web/dist/</span>
+npm run stars      <span class="annot"># rebuild web/public/data/stars.json from data/raw/bsc5.dat.gz</span></code></pre>
+      <p>Controls: drag to orbit, wheel to zoom (250 km to 140,000 km altitude). Top bar: reference frame and Layers. Bottom left: time. Bottom right: where you are and what the Sun is doing.</p>
+    </section>
+
+  </article>
+</div>

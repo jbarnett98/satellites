@@ -1,0 +1,25 @@
+{
+  "name": "atmospheric-perspective-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Atmospheric Perspective — browser globe and UI (Svelte 5 + Vite + Three.js)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/three": "^0.185.4",
+    "svelte": "^5.57.0",
+    "svelte-check": "^4.7.6",
+    "typescript": "^5.9.0",
+    "vite": "^8.3.0"
+  }
+}
