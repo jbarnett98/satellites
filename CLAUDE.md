@@ -161,7 +161,11 @@ files (`stars-hyg.bin`, `milky-way-glow-4096.webp`) and future workers/routes.
 - **The Claude Browser pane pauses `requestAnimationFrame` when not displayed**, so fps read
   there is meaningless (1–4). Use screenshots to check rendering; ask Jack for real fps.
   Dev-only handle: `window.__globe` exposes the Globe instance for console inspection.
-- Dev server: `preview_start` with name `web` → http://localhost:5173.
+- Dev server: `preview_start` with name `web` → http://localhost:5173. **The app stops this
+  server when its Browser-pane tab closes** (happened 2026-09-11; Jack found localhost down).
+  Before telling Jack to look at localhost, verify with `curl -s -o /dev/null -w "%{http_code}"
+  http://localhost:5173/` and restart via `preview_start` if needed. Jack can instead run
+  `npm run dev` in his own terminal for a server that outlives the pane.
 
 ## 8. Recurring deliverables Jack requires from me
 
@@ -193,6 +197,14 @@ eventually describe the entire build end to end.
   §10 once it exists.
 - **When a stage completes, ask Jack: "Add Part N to the journal?"** Do not write the section
   unless he says yes. Do not offer for minor work.
+- **Parts are per *component*, not per stage (Jack, 2026-09-11).** Stages 1 and 2 became one
+  part, "The Globe", with the review revisions told inside it. When a later stage rejuvenates
+  an existing component, ask whether to *extend* its part or start a new one; default to
+  extending. Number figures `Figure N.M`, subsections `N.1 … N.6`, and add a Revision-log row
+  every time the document changes.
+- The journal's shared CSS is `docs/_shared/docs.css`; briefs and the journal are assembled as
+  `<title>` + Google Fonts link + `<style>`(docs.css)`</style>` + body. Journal-specific CSS
+  sits in a second `<style>` at the top of the body.
 - Each part follows the same skeleton so the document reads as one process:
   `Part N — <Component>` · Context (why now) · What was built · How it works · Decisions and
   alternatives considered · Measurements · What this enables next.
@@ -233,14 +245,17 @@ All three document types (plan, briefs, journal) use one visual family so they r
 | # | Stage | Completed | Brief | Journal part |
 |---|---|---|---|---|
 | 0 | Game plan (pre-build) | 2026-09-11 | Game Plan artifact (link in §1) | — |
-| 1 | Framework: local site, globe, night sky, first UI | 2026-09-11 | `docs/briefs/01-framework.html` · https://claude.ai/code/artifact/341aff22-9767-47b6-ba8f-4c25eda26706 | pending Jack's yes |
-| 2 | Globe polish: 8k textures, clouds, Sun, HYG stars, Milky Way, controls | 2026-09-11 | `docs/briefs/02-globe-polish.html` · https://claude.ai/code/artifact/5bda8a5d-9661-4d3d-9c9c-2ef8edb6196d | pending Jack's yes |
+| 1 | Framework: local site, globe, night sky, first UI | 2026-09-11 | `docs/briefs/01-framework.html` · https://claude.ai/code/artifact/341aff22-9767-47b6-ba8f-4c25eda26706 | Part 1 — The Globe |
+| 2 | Globe polish: 8k textures, clouds, Sun, HYG stars, Milky Way, controls | 2026-09-11 | `docs/briefs/02-globe-polish.html` · https://claude.ai/code/artifact/5bda8a5d-9661-4d3d-9c9c-2ef8edb6196d | Part 1 — The Globe |
 
 Commits: Stage 1 `7a3e84d`. Jack said "yes commit" at the end of Stage 1 → **commit at the
 end of every stage** (one commit per stage, message "Stage N: <name>"); still never push
 without being asked.
 
-Journal artifact URL: *(not yet created)*
+Journal: `docs/journal/atmospheric-perspective-journal.html` ·
+https://claude.ai/code/artifact/52b246d3-75b9-42f9-88e2-5dfd3fb9de1e (redeploy this same file
+path from this conversation, or pass this URL as `url` from another, so the link never changes).
+Parts so far: 1 — The Globe (2026-09-11).
 
 ## 11. Data source quick reference
 

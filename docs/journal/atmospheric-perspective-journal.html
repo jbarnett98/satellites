@@ -1,0 +1,412 @@
+<title>Atmospheric Perspective Journal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F4F6F9; --surface: #FFFFFF; --ink: #1A2230; --muted: #5B6677; --line: #D3DAE3;
+    --accent: #0B7580; --accent-soft: #DFEFF0; --amber: #B45A10; --amber-soft: #FBEEDD;
+    --green: #2F7D4F; --green-soft: #E3F2E8; --code-bg: #EAEFF4; --shadow: 0 1px 2px rgba(26,34,48,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+      --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+      --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+    --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+    --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Source Serif 4", Georgia, serif; font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 96px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 48px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px 16px 64px; } nav.toc { position: static !important; } }
+  header.mast { grid-column: 1 / -1; border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+  .eyebrow { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 46px; line-height: 1.02; margin: 8px 0 12px; text-wrap: balance; }
+  .lede { font-size: 19px; max-width: 66ch; margin: 0 0 20px; }
+  .telemetry { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.7; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 24px; font-variant-numeric: tabular-nums; }
+  .telemetry span { color: var(--muted); } .telemetry b { font-weight: 500; color: var(--ink); }
+  nav.toc { position: sticky; top: 24px; align-self: start; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 600; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--ink); }
+  nav.toc .toc-head { margin-bottom: 8px; }
+  article { max-width: 760px; min-width: 0; }
+  section { padding: 12px 0 28px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  section:last-of-type { border-bottom: 0; }
+  h2 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 30px; line-height: 1.1; margin: 8px 0 14px; text-wrap: balance; }
+  h3 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 20px; line-height: 1.2; margin: 26px 0 8px; text-wrap: balance; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; max-width: 70ch; } li { margin-bottom: 5px; }
+  strong { font-weight: 600; }
+  code, .mono { font-family: "IBM Plex Mono", Consolas, monospace; font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+  pre { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 14px; margin: 0 0 14px; overflow-x: auto; white-space: pre; }
+  pre code { background: none; padding: 0; font-size: inherit; } .annot { color: var(--muted); }
+  .note, .warn, .done { margin: 18px 0 20px; padding: 12px 16px 6px; max-width: 70ch; border-top: 2px solid var(--accent); background: var(--accent-soft); }
+  .warn { border-top-color: var(--amber); background: var(--amber-soft); }
+  .done { border-top-color: var(--green); background: var(--green-soft); }
+  .note .eyebrow { color: var(--accent); margin-bottom: 4px; } .warn .eyebrow { color: var(--amber); margin-bottom: 4px; } .done .eyebrow { color: var(--green); margin-bottom: 4px; }
+  .note p:last-child, .warn p:last-child, .done p:last-child { margin-bottom: 8px; }
+  .tablewrap { overflow-x: auto; margin: 6px 0 18px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.45; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 8px; border-radius: 3px; white-space: nowrap; }
+  .pill.live { background: var(--green-soft); color: var(--green); }
+  .pill.partial { background: var(--accent-soft); color: var(--accent); }
+  .pill.todo { background: var(--code-bg); color: var(--muted); }
+  .pill.risk { background: var(--amber-soft); color: var(--amber); }
+  .opt { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .opt:last-of-type { border-bottom: 1px solid var(--line); }
+  .opt .o-key { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 26px; line-height: 1; color: var(--accent); }
+  .opt h4 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-size: 19px; margin: 0 0 6px; }
+  .opt p { margin-bottom: 6px; }
+  .opt .tradeoff { font-size: 15px; color: var(--muted); }
+  figure { margin: 18px 0 22px; }
+  figure svg { max-width: 100%; height: auto; display: block; color: var(--ink); background: var(--surface); border: 1px solid var(--line); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; max-width: 70ch; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; }
+  .tree { font-size: 12.5px; }
+  .tree .d { color: var(--accent); font-weight: 500; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+<style>
+  /* journal-specific additions to the shared document stylesheet */
+  .part { padding: 24px 0 36px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+  .part-head { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; align-items: end; margin: 0 0 18px; }
+  .part-num { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 64px; line-height: .9; color: var(--accent); }
+  .part-num small { display: block; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+  .part-head h2 { margin: 0; font-size: 36px; }
+  .part-meta { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12px; color: var(--muted); margin: 0 0 22px; }
+  .part h3 { display: flex; gap: 10px; align-items: baseline; }
+  .part h3 .n { font-family: "IBM Plex Mono", Consolas, monospace; font-weight: 500; font-size: 13px; color: var(--accent); }
+  .abstract { font-size: 17.5px; border-left: 0; padding: 0; margin: 0 0 18px; max-width: 68ch; }
+  .abstract .eyebrow { margin-bottom: 6px; }
+  .revlog td.num { color: var(--muted); }
+  figcaption b { color: var(--ink); }
+  .callout-quote { font-style: italic; color: var(--muted); max-width: 66ch; margin: 0 0 14px; padding-left: 14px; border-left: 2px solid var(--line); }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">Atmospheric Perspective · Build journal · begun 11 Sep 2026</div>
+    <h1>Atmospheric Perspective: how it was built</h1>
+    <p class="lede">A continuous account of building a real-time globe of everything in Earth orbit — what we made, how each piece works, what we chose and what we chose against, and what we measured. One part per component. Written as we go.</p>
+    <div class="telemetry" aria-label="Journal state">
+      <div><span>PARTS </span><b>1</b> <span>· LAST UPDATED </span><b>11 Sep 2026</b></div>
+      <div><span>COMMITS COVERED </span><b>7a3e84d · f16d9b8</b></div>
+      <div><span>AUTHORS </span><b>Jack Barnett (direction) · Claude (build)</b></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow toc-head">Contents</div>
+    <ol>
+      <li><a href="#preface">Preface</a></li>
+      <li><a href="#part-1">Part 1 — The Globe</a></li>
+      <li><a href="#p1-context">1.1 Context</a></li>
+      <li><a href="#p1-built">1.2 What was built</a></li>
+      <li><a href="#p1-how">1.3 How it works</a></li>
+      <li><a href="#p1-decisions">1.4 Decisions and alternatives</a></li>
+      <li><a href="#p1-measurements">1.5 Measurements</a></li>
+      <li><a href="#p1-next">1.6 What this enables next</a></li>
+      <li><a href="#references">References</a></li>
+      <li><a href="#revisions">Revision log</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section id="preface">
+      <div class="abstract">
+        <div class="eyebrow">Preface</div>
+        <p>Atmospheric Perspective is a browser-based platform for satellite data. Its centrepiece is a three-dimensional globe on which every publicly tracked object in Earth orbit will move in real time, propagated in the browser from fresh orbital element sets; around it sit explorers, dashboards and observer tools built on the same data. The project is deliberately static-first: the browser does the orbital mechanics, a small pipeline refreshes the data on a schedule, and hosting is meant to cost nothing. A previous version of this idea, built on a cloud provider with orchestration and containers added early, taught the lesson that shapes every decision here: add machinery only when a feature demands it.</p>
+        <p>This journal is written as the work happens. Each part covers one component of the system and follows the same six headings — context, what was built, how it works, decisions and alternatives, measurements, what this enables next — so that the document reads as one process from the first line to the last. Where a component was revised after review, the revision is told inside the same part rather than as a separate chapter, because the revision is part of how the thing came to be.</p>
+      </div>
+    </section>
+
+    <section class="part" id="part-1">
+      <div class="part-head">
+        <div class="part-num"><small>Part</small>1</div>
+        <h2>The Globe</h2>
+      </div>
+      <p class="part-meta">11 September 2026 · commits 7a3e84d, f16d9b8 · web/src/lib/{astro,globe,state}, web/src/ui, pipeline/ap_pipeline/{textures,sky}</p>
+
+      <h3 id="p1-context"><span class="n">1.1</span>Context</h3>
+      <p>Before any satellite could be drawn, the world it would be drawn into had to exist: a planet with the correct shape, lit by the real Sun for the real time, turning at the right rate under a sky fixed to the stars. Everything a satellite layer will need — a coordinate frame, a clock, a way to turn simulation time into a picture — is decided here, and the cheapest time to decide it correctly is before there are ten thousand moving objects depending on it.</p>
+      <p>The plan that preceded the build (the "game plan", 11 September 2026) had already fixed the architecture: a Svelte 5 single-page application built with Vite, rendering through Three.js with hand-written shaders, and a Python pipeline that turns raw upstream data into small static files. It had also surfaced one fact that made the static-first design mandatory rather than merely economical: since 26 March 2026 CelesTrak, the public source of orbital element sets, permits one download per dataset per two-hour update window and answers a second with HTTP 403. A site whose browsers fetched element sets directly would fail on its second visitor. The pipeline therefore fetches once and the site serves its own copy — and that same pattern, raw data in, small derived file out, was rehearsed in this part with the sky before it is trusted with the satellites.</p>
+      <p>The work was done in two sittings on the same day. The first produced a working globe from nothing; Jack reviewed it and asked for four things — slower camera drag, a sharper Earth, a fuller sky "possibly even the centre of the Milky Way, though I like the idea of plotting the stars rather than an image", and the Sun visible in its true position — plus a subtle cloud layer and more descriptive file names. The second sitting delivered those. This part describes the result as one thing, and notes along the way what the first pass did differently and why it changed.</p>
+
+      <h3 id="p1-built"><span class="n">1.2</span>What was built</h3>
+      <p><strong>The toolchain.</strong> We installed Node.js 24.19 (for the build tools only; nothing of ours runs on Node in production) and later <span class="mono">uv</span> 0.12 for the Python side. Python 3.14 and Git were already present. The web application is Svelte 5.57, Vite 8.3, TypeScript 5.9 and Three.js r186; the production build is a single HTML file, one stylesheet and one 165 KB (gzipped) script, Three.js included.</p>
+      <p><strong>The repository.</strong> A monorepo with three concerns — <span class="mono">web/</span> for the site, <span class="mono">pipeline/</span> for the data work, <span class="mono">docs/</span> for briefs and this journal — plus a git-ignored <span class="mono">data/raw/</span> for downloaded originals. Inside <span class="mono">web/src</span> the dependency direction is strict and one-way: user interface → shared state → globe → astronomy. The astronomy modules import nothing but a vector type; the globe modules never import Svelte; the interface never touches Three.js except through one component, <span class="mono">GlobeCanvas</span>, which is the deliberate bridge.</p>
+      <p><strong>The Earth.</strong> A WGS84 ellipsoid — equatorial radius 6378.137 km, polar 6356.752 km — textured with NASA's Blue Marble Next Generation (December 2004, with topography and bathymetry) by day and Black Marble 2016 city lights by night. The first pass used NASA's 5400×2700 JPEG directly. On review it was judged too soft, and we went back to the 21,600×10,800 original (30 MB) and had the pipeline resample it to three WebP tiers of 2048, 4096 and 8192 pixels wide; the site paints the 2048 tier within about a second and swaps the 8192 tier in behind it. A custom fragment shader blends day and night across a soft terminator, adds Lambert shading, warms the light near the terminator, glints off water and tints the disc blue toward the limb.</p>
+      <p><strong>The atmosphere.</strong> A shell 4.5% larger than the Earth, drawn back-face only with additive blending. Because the Earth is drawn first, only the ring of shell outside the planet's disc survives the depth test, and that ring is the glow — brightest at the limb, fading outward, dimmer on the night side, warmer near the terminator.</p>
+      <p><strong>The clouds.</strong> Added in the second sitting: NASA's Blue Marble cloud composite as a translucent shell 25 km above the surface, opacity 0.42, lit by the same sun vector as the ground so it shares the terminator. Clouds also darken the ground beneath them by up to 22% and hide up to 80% of the city lights below, which is what makes the shell read as a layer rather than paint. The sheet drifts eastward at 0.25° per simulated hour — an artistic touch, invisible at real speed, documented as non-physical.</p>
+      <p><strong>The Sun.</strong> A billboard sprite placed along the computed sun vector each frame, drawn with a canvas-generated radial gradient whose inner stop is sized so the bright disc subtends the Sun's true 0.53°, inside a soft nine-degree glare. It is drawn in the sky pass, so the Earth occludes it: sunrise and sunset over the limb need no special handling.</p>
+      <p><strong>The stars.</strong> The first pass plotted the Yale Bright Star Catalogue — 9,096 naked-eye stars — as points. It looked sparse. The second pass replaced it with the HYG database (Hipparcos, Yale and Gliese combined): 119,613 stars, each at its J2000 right ascension and declination in the inertial frame, sized and faded by visual magnitude and coloured by its B−V index through a small black-body ramp. Because the stars live in the inertial frame they hold still while the Earth turns beneath them, which is what the sky does.</p>
+      <p><strong>The Milky Way.</strong> Jack's brief was specific: see the galaxy, but plot data rather than paste a photograph. The galaxy, to the eye, is the integrated light of stars too faint to resolve individually, so we reproduced it the same way. The pipeline reads the Tycho-2 catalogue — 2,539,913 stars — sums their light into a sky-brightness map, and the browser drapes that map over the celestial sphere underneath the plotted stars. The band, the dark lanes of the Great Rift and the bulge toward Sagittarius all emerge from the catalogue. The map is 4096×2048 pixels and 202 KB.</p>
+      <p><strong>Time and frames.</strong> A simulation clock that follows the wall clock, or runs at 1× to 3,600× real time, or pauses, or jumps to a chosen date; every visible quantity is recomputed from its single value each frame. Two reference frames, switchable without a visual jump: inertial (the sky holds still, the Earth turns) and Earth-fixed (the Earth holds still, the sky and Sun move).</p>
+      <p><strong>The interface.</strong> A top bar with the wordmark, a live UTC clock and a LIVE / SIM / PAUSED badge, the frame toggle and a Layers button; a layers panel with toggles for day/night shading, city lights, clouds, atmosphere, stars, the Milky Way and a 15° graticule, plus sliders for star brightness and Milky Way intensity; time controls; and a status readout of camera latitude, longitude and altitude, the sub-solar point, sidereal time, frame rate, texture tier and star count, with data credits beneath.</p>
+      <p><strong>The pipeline.</strong> Three Python modules, named for what they do, run from a <span class="mono">uv</span> project with two dependencies (NumPy, Pillow): <span class="mono">build_earth_textures_from_nasa</span>, <span class="mono">build_star_catalog_from_hyg</span>, <span class="mono">build_milky_way_glow_from_tycho2</span>. The first pass had a single dependency-free script called <span class="mono">build_stars.py</span>; the name was rightly called out as saying nothing, and the restructuring followed.</p>
+
+      <h3 id="p1-how"><span class="n">1.3</span>How it works</h3>
+      <p><strong>Coordinates.</strong> Scene units are kilometres. The scene is laid out in the Earth-centred inertial frame — x toward the vernal equinox, z toward the north pole — remapped to Three.js's y-up convention as <span class="mono">scene.x = eci.x, scene.y = eci.z, scene.z = −eci.y</span>. The mapping is right-handed, puts north up, and makes east longitude increase in exactly the direction an equirectangular texture wraps onto Three's sphere, so the Earth needs no texture offset: rotating the mesh by Greenwich Mean Sidereal Time about y puts Greenwich where it belongs. GMST is computed from the Julian date with the same polynomial the satellite propagator library uses, so the Earth and the future satellites will agree on where Greenwich is.</p>
+      <p><strong>The scene graph.</strong> Two groups do the work. <span class="mono">earthGroup</span> holds the Earth mesh, the cloud shell, the atmosphere shell and the graticule; it is scaled by 6356.752/6378.137 in y so the whole planet is an ellipsoid, and it rotates by GMST every frame. Its parent, <span class="mono">world</span>, is the inertial frame, with rotation zero in the inertial view. Switching to the Earth-fixed view sets <span class="mono">world</span>'s rotation to −GMST, which exactly cancels the Earth's spin, and rotates the camera by the same delta at that instant so the picture is continuous. Satellites will be children of <span class="mono">world</span>, because that is the frame their propagator produces.</p>
+      <p>The sky is a second scene rendered first, through a camera that copies the main camera's rotation but never its position, so the stars are at infinity regardless of zoom and never touch the depth buffer. Its root group carries the Milky Way dome, the star points and the Sun sprite in that draw order, and follows <span class="mono">world</span>'s rotation so the sky and the Earth stay consistent in both frames. The depth buffer is cleared between the two passes; the Earth therefore always occludes the sky — and the Sun — behind it.</p>
+
+      <figure>
+        <svg viewBox="0 0 980 470" role="img" aria-label="Per-frame data flow: the clock produces simTime; from it the globe derives Julian date, sidereal time and the Sun vector; those pose the scene graph and feed the shader uniforms; the sky is rendered with a rotation-only camera, then the world; every 200 ms a status object flows back to the interface, while settings flow from the interface into the globe." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+          </defs>
+          <rect x="20" y="40" width="200" height="390" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <text x="32" y="60" font-weight="700" font-size="13">Svelte (UI thread)</text>
+          <rect x="34" y="80" width="172" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="44" y="98" font-weight="700">clock</text>
+          <text x="44" y="114">live · rate · simTime</text>
+          <text x="44" y="130" opacity=".7">tick() once per frame</text>
+          <rect x="34" y="160" width="172" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="44" y="178" font-weight="700">settings</text>
+          <text x="44" y="194">frame · layers · sliders</text>
+          <text x="44" y="210" opacity=".7">$effect → globe.setX()</text>
+          <rect x="34" y="240" width="172" height="62" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="44" y="258" font-weight="700">status</text>
+          <text x="44" y="274">fps · GMST · sub-solar</text>
+          <text x="44" y="290">camera lat / lon / alt · tier</text>
+          <rect x="34" y="330" width="172" height="80" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="44" y="348" font-weight="700">components</text>
+          <text x="44" y="364">TopBar · TimeControls</text>
+          <text x="44" y="380">LayersPanel · StatusBar</text>
+          <text x="44" y="396" opacity=".7">read state, render DOM</text>
+          <rect x="280" y="40" width="380" height="390" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="292" y="60" font-weight="700" font-size="13">Globe.tick()  — Three.js, no Svelte</text>
+          <text x="292" y="92" font-weight="700">1  derive</text>
+          <text x="310" y="110" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">jd    = julianDate(simTime)</text>
+          <text x="310" y="126" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">θ     = gmst(jd)</text>
+          <text x="310" y="142" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">sun   = sunState(jd)  → ECI unit vector</text>
+          <text x="292" y="176" font-weight="700">2  pose the scene graph</text>
+          <text x="310" y="194" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">world.rotation.y      = ecef ? −θ : 0</text>
+          <text x="310" y="210" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">earthGroup.rotation.y = θ</text>
+          <text x="310" y="226" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">skyRoot.rotation.y    = world.rotation.y</text>
+          <text x="310" y="242" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">sun sprite ← sun · 9.5 sky units</text>
+          <text x="292" y="276" font-weight="700">3  feed the shaders</text>
+          <text x="310" y="294" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">uSunDir · uCameraPos · uCloudOffset</text>
+          <text x="310" y="310" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">(Earth, clouds, atmosphere)</text>
+          <text x="292" y="344" font-weight="700">4  render twice</text>
+          <text x="310" y="362">clear → sky scene (rotation-only camera)</text>
+          <text x="310" y="378">→ clear depth → world scene</text>
+          <text x="292" y="410" font-weight="700">5  every 200 ms</text>
+          <text x="400" y="410">emit status → UI</text>
+          <rect x="720" y="40" width="240" height="390" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <text x="732" y="60" font-weight="700" font-size="13">GPU (custom GLSL)</text>
+          <rect x="734" y="78" width="212" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="744" y="96" font-weight="700">Earth</text>
+          <text x="744" y="112">terminator · night lights · glint</text>
+          <text x="744" y="128">limb tint · cloud shadow</text>
+          <text x="744" y="142" opacity=".7">3 textures, 9 uniforms</text>
+          <rect x="734" y="158" width="212" height="52" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="744" y="176" font-weight="700">Clouds</text>
+          <text x="744" y="192">lit shell, limb boost, drift</text>
+          <rect x="734" y="220" width="212" height="52" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="744" y="238" font-weight="700">Atmosphere</text>
+          <text x="744" y="254">back faces, additive, sun-aware</text>
+          <rect x="734" y="282" width="212" height="52" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="744" y="300" font-weight="700">Milky Way dome</text>
+          <text x="744" y="316">RA/Dec from view direction</text>
+          <rect x="734" y="344" width="212" height="52" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="744" y="362" font-weight="700">Stars · Sun</text>
+          <text x="744" y="378">119k points · one sprite</text>
+          <line x1="206" y1="111" x2="278" y2="111" style="stroke:var(--accent)" stroke-width="2" marker-end="url(#aa)"/>
+          <text x="242" y="103" text-anchor="middle" font-size="11" style="fill:var(--accent)" font-weight="700">simTime</text>
+          <line x1="206" y1="191" x2="278" y2="191" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <text x="242" y="183" text-anchor="middle" font-size="11">on change</text>
+          <line x1="278" y1="271" x2="206" y2="271" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <text x="242" y="263" text-anchor="middle" font-size="11">5 Hz</text>
+          <line x1="660" y1="113" x2="732" y2="113" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <line x1="660" y1="184" x2="732" y2="184" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <line x1="660" y1="246" x2="732" y2="246" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <line x1="660" y1="308" x2="732" y2="308" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <line x1="660" y1="370" x2="732" y2="370" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+          <text x="696" y="105" text-anchor="middle" font-size="11">uniforms</text>
+          <line x1="120" y1="302" x2="120" y2="328" stroke="currentColor" stroke-width="1.4" marker-end="url(#a)"/>
+        </svg>
+        <figcaption><b>Figure 1.1</b> One frame. State flows right along the accent arrow; only a throttled status object flows back. The globe never reads interface state directly — it is handed a time source and a handful of setters.</figcaption>
+      </figure>
+
+      <p><strong>One frame.</strong> The browser asks for a frame roughly sixty times a second (240 on Jack's machine). Each time, the globe asks the clock for the simulation time, converts it to a Julian date, computes GMST and the Sun's direction (the Astronomical Almanac's low-precision solar algorithm, accurate to about a hundredth of a degree), poses the two groups, writes the sun vector and camera position into the shader uniforms, renders the sky and then the world, and every 200 ms reports a status object back to the interface. The interface, for its part, pushes changes into the globe through Svelte effects — a frame toggle, a layer switch, a slider — and otherwise leaves it alone.</p>
+      <p><strong>Lighting without lights.</strong> There are no Three.js light objects. Every shader receives the same sun vector and computes <span class="mono">dot(normal, sun)</span> per pixel. On the Earth a <span class="mono">smoothstep</span> over ±0.10 in that quantity gives a twilight band roughly twelve degrees wide; the day side gets Lambert shading plus a warm push toward the terminator, a specular glint where the Blue Marble is blue, and a blue tint toward the limb; the night side shows 3.5% of the day texture plus the city lights tinted sodium-orange. The cloud shader lights coverage the same way, warms it near the terminator and dims it to blue-grey at night. The Earth shader also samples the cloud map, offset by the same drift, to shadow the ground and dim the lights beneath cloud.</p>
+      <p><strong>Two loading tiers.</strong> The globe loads in two waves. Wave one fetches the 2048-wide day, night and cloud maps, the star binary and the Milky Way map in parallel — about two megabytes — builds every object, and reports ready. Wave two fetches the 8192 day and night maps and the 4096 cloud map, hands them to the shells, and frees the small ones; nothing on screen changes except sharpness. A returning visitor loads all of it from cache.</p>
+      <p><strong>The pipeline, module by module.</strong> Each module reads originals from <span class="mono">data/raw/</span> and writes something small into <span class="mono">web/public/</span>. The texture module opens the 233-megapixel Blue Marble (Pillow's decompression-bomb guard has to be switched off), converts to RGB and resamples with a Lanczos filter to each tier, saving WebP at quality 86; the same for Black Marble and, as a single grey channel, the cloud composite. The star module reads the HYG CSV, converts right ascension from hours to degrees, drops the Sun, sorts by magnitude and packs each star into four little-endian 16-bit integers — RA and Dec in hundredths of a degree, magnitude and B−V ×100 — eight bytes a star, a precision of 36 arcseconds, thirty times finer than a screen pixel at the globe's field of view; names for 759 stars go in a sidecar file keyed by row.</p>
+      <p>The Milky Way module is the one worth describing in full. It reads all twenty Tycho-2 parts (four seconds in Python 3.14), converts each star's Tycho BT and VT magnitudes to Johnson V and B−V with the standard relations, and discards stars brighter than V 8, which are plotted individually and would otherwise be counted twice. Each remaining star contributes a weight of 10<sup>−0.4·max(V, 10)</sup> — flux, but capped at tenth magnitude, so a single ninth-magnitude star cannot make a blob and the map traces the density of faint stars, which is the classic technique for Tycho-2 all-sky maps and is what the eye actually perceives. Contributions are coloured by B−V through the same black-body ramp the browser uses, binned into a 4096×2048 grid of right ascension and declination, and divided by the cosine of declination so that a pixel near the pole, which covers less sky, is expressed as surface brightness rather than count. The grid is then smoothed with a Gaussian of seven pixels (about 0.6°) by FFT, chosen because it wraps at RA 0° and leaves no seam; the 55th-percentile floor is subtracted so empty sky is black, the result is normalised to the 99.8th percentile and given a gamma of 0.85, and the map is written as WebP.</p>
+      <p>In the browser the map is decoded to linear light and drawn on the inside of a sphere whose fragment shader derives right ascension and declination from each pixel's own view direction rather than trusting sphere texture coordinates, so it lines up with the plotted stars by construction. A single intensity uniform scales it; the interface slider's 0–100% maps onto 0–0.3 linear, with the default at 17%.</p>
+
+      <figure>
+        <svg viewBox="0 0 980 440" role="img" aria-label="Raw sources in data/raw (256 MB) flow through three pipeline modules into small files in web/public (9 MB), which the browser loads in two tiers: 2 MB for the first frame and 5.5 MB swapped in afterwards." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="bb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+          </defs>
+          <text x="20" y="28" font-weight="700" font-size="13">data/raw  (once, 256 MB, git-ignored)</text>
+          <text x="340" y="28" font-weight="700" font-size="13">pipeline modules</text>
+          <text x="620" y="28" font-weight="700" font-size="13">web/public  (shipped)</text>
+          <text x="820" y="28" font-weight="700" font-size="13">browser</text>
+          <rect x="20" y="44" width="250" height="52" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="62" font-weight="700">Blue Marble 21600×10800 · 30 MB</text>
+          <text x="30" y="80">Black Marble 13500×6750 · 8 MB</text>
+          <rect x="20" y="108" width="250" height="36" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="131" font-weight="700">Cloud composite TIFF 8192 · 36 MB</text>
+          <rect x="20" y="200" width="250" height="36" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="223" font-weight="700">HYG v4.4 · 119,614 rows · 13.6 MB</text>
+          <rect x="20" y="300" width="250" height="52" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="318" font-weight="700">Tycho-2 · 2,539,913 rows · 159 MB</text>
+          <text x="30" y="336">20 gzip parts, pipe-delimited</text>
+          <rect x="330" y="44" width="250" height="100" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="340" y="62" font-weight="700">build_earth_textures_from_nasa</text>
+          <text x="340" y="80">Lanczos resample → WebP tiers</text>
+          <text x="340" y="96">day 8192/4096/2048 · night 8192/2048</text>
+          <text x="340" y="112">clouds 4096/2048 (single channel)</text>
+          <text x="340" y="132" opacity=".65">18 s</text>
+          <rect x="330" y="200" width="250" height="52" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="340" y="218" font-weight="700">build_star_catalog_from_hyg</text>
+          <text x="340" y="236">RA h→°, sort by mag, quantise Int16</text>
+          <rect x="330" y="300" width="250" height="100" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="340" y="318" font-weight="700">build_milky_way_glow_from_tycho2</text>
+          <text x="340" y="336">cap flux at V=10 · bin to 4096×2048</text>
+          <text x="340" y="352">÷ cos(dec) · FFT blur σ=7 px</text>
+          <text x="340" y="368">floor p55, ref p99.8, γ 0.85</text>
+          <text x="340" y="388" opacity=".65">7 s</text>
+          <rect x="610" y="44" width="180" height="100" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="620" y="62" font-weight="700">textures/earth/</text>
+          <text x="620" y="80" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">day-2048   0.27 MB</text>
+          <text x="620" y="96" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">day-8192   3.10 MB</text>
+          <text x="620" y="112" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">night-8192 0.77 MB</text>
+          <text x="620" y="128" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">clouds-4096 1.62 MB</text>
+          <rect x="610" y="200" width="180" height="52" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="620" y="218" font-weight="700">data/sky/</text>
+          <text x="620" y="236" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">stars-hyg.bin 0.93 MB</text>
+          <rect x="610" y="300" width="180" height="52" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="620" y="318" font-weight="700">textures/sky/</text>
+          <text x="620" y="336" font-family="IBM Plex Mono, Consolas, monospace" font-size="11">milky-way-4096 0.20 MB</text>
+          <rect x="820" y="44" width="140" height="120" fill="none" style="stroke:var(--accent)" stroke-width="2"/>
+          <text x="830" y="62" font-weight="700" style="fill:var(--accent)">Tier 1 · 2.0 MB</text>
+          <text x="830" y="80">day/night/clouds 2048</text>
+          <text x="830" y="96">all 119k stars</text>
+          <text x="830" y="112">Milky Way map</text>
+          <text x="830" y="128">app 165 KB</text>
+          <text x="830" y="150" font-weight="700" style="fill:var(--accent)">→ first frame</text>
+          <rect x="820" y="200" width="140" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="830" y="218" font-weight="700">Tier 2 · 5.5 MB</text>
+          <text x="830" y="236">day/night 8192</text>
+          <text x="830" y="252">clouds 4096</text>
+          <text x="830" y="266" opacity=".7">swapped in, old freed</text>
+          <text x="830" y="318" font-weight="700">returning visit</text>
+          <text x="830" y="336">0 bytes — cached</text>
+          <line x1="270" y1="70" x2="328" y2="70" stroke="currentColor" stroke-width="1.4" marker-end="url(#b)"/>
+          <line x1="270" y1="126" x2="328" y2="118" stroke="currentColor" stroke-width="1.4" marker-end="url(#b)"/>
+          <line x1="270" y1="218" x2="328" y2="218" stroke="currentColor" stroke-width="1.4" marker-end="url(#b)"/>
+          <line x1="270" y1="326" x2="328" y2="326" stroke="currentColor" stroke-width="1.4" marker-end="url(#b)"/>
+          <line x1="580" y1="94" x2="608" y2="94" stroke="currentColor" stroke-width="1.4" marker-end="url(#b)"/>
+          <line x1="580" y1="226" x2="608" y2="226" stroke="currentColor" stroke-width="1.4" marker-end="url(#b)"/>
+          <line x1="580" y1="326" x2="608" y2="326" stroke="currentColor" stroke-width="1.4" marker-end="url(#b)"/>
+          <line x1="790" y1="80" x2="818" y2="80" style="stroke:var(--accent)" stroke-width="2" marker-end="url(#bb)"/>
+          <line x1="790" y1="226" x2="818" y2="96" style="stroke:var(--accent)" stroke-width="2" marker-end="url(#bb)"/>
+          <line x1="790" y1="326" x2="818" y2="112" style="stroke:var(--accent)" stroke-width="2" marker-end="url(#bb)"/>
+          <line x1="790" y1="112" x2="818" y2="230" stroke="currentColor" stroke-width="1.4" marker-end="url(#b)"/>
+          <text x="20" y="420" opacity=".7">Nothing in the left column ever reaches a browser. The right column is what a visitor downloads.</text>
+        </svg>
+        <figcaption><b>Figure 1.2</b> The pipeline pattern the satellite data will follow: 256 MB of catalogue and imagery in, 9 MB of site assets out, two loading tiers in the browser.</figcaption>
+      </figure>
+
+      <h3 id="p1-decisions"><span class="n">1.4</span>Decisions and alternatives considered</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Decision</th><th>Why</th><th>Alternative not taken</th></tr></thead>
+          <tbody>
+            <tr><td>Three.js with custom shaders</td><td>Full control of a future 35k-point cloud, a 165 KB bundle, and looks that stock materials cannot produce (terminator, night lights, halo).</td><td>CesiumJS — a complete globe out of the box, at 3 MB+ and with an entity model that fights large point counts.</td></tr>
+            <tr><td>Scene units in kilometres</td><td>Altitudes, radii and satellite state vectors read directly; float32 precision is ample to geostationary distance.</td><td>Earth radii as the unit.</td></tr>
+            <tr><td>Render in the inertial frame, rotate the Earth</td><td>Satellites will live in this frame natively; orbits close on themselves; the frame toggle is one rotation.</td><td>An Earth-fixed scene with satellites re-rotated each frame.</td></tr>
+            <tr><td>WGS84 ellipsoid via a group scale</td><td>One line makes the Earth, clouds, atmosphere and graticule all correctly oblate.</td><td>A sphere at mean radius, 0.3% wrong at the poles.</td></tr>
+            <tr><td>Stars in a separate scene</td><td>Infinite distance without depth tricks or a huge far plane; the Sun gets the same treatment for free.</td><td>A skybox sphere at large radius in the main scene.</td></tr>
+            <tr><td>A real star catalogue, not a texture</td><td>Real positions, real colours, less than a megabyte; and it fits the project's data ethic.</td><td>NASA's deep star map texture (2–16 MB, prettier Milky Way, no data behind it).</td></tr>
+            <tr><td>HYG replaces the Yale catalogue</td><td>Thirteen times more stars in the same licence family; Yale is a subset of it anyway.</td><td>Keep the 9,096 and brighten them.</td></tr>
+            <tr><td>The Milky Way as a computed brightness map</td><td>Honours "plot the data" while producing the galaxy for 202 KB. Plotting all 2.5 million stars would cost 20 MB per visit.</td><td>Plot every Tycho-2 star; or use a photograph.</td></tr>
+            <tr><td>Capped-flux weighting for that map</td><td>Traces faint-star density, kills blotches from individual bright stars.</td><td>Pure flux weighting — tried first, blotchy.</td></tr>
+            <tr><td>Milky Way intensity in linear light</td><td>The map is decoded to linear; an intensity of 0.12 had displayed as 38% grey — fog, not glow. The slider now maps onto 0–0.3 linear.</td><td>Apply intensity in display space, against Three's colour management.</td></tr>
+            <tr><td>Progressive texture tiers, 2048 then 8192</td><td>A picture in about a second; full detail arrives unnoticed; a desktop-only audience justifies 8k at the top.</td><td>One 4096 tier — simpler, softer up close.</td></tr>
+            <tr><td>WebP</td><td>Roughly a quarter of JPEG's bytes at equal quality; universal on desktop.</td><td>GPU-compressed KTX2/Basis — smaller in video memory, more tooling.</td></tr>
+            <tr><td>Clouds influence the ground shader</td><td>The shadow and the dimmed lights are what make the shell read as a layer.</td><td>An independent cloud sphere — cheaper, looks pasted on.</td></tr>
+            <tr><td>Cloud drift, 0.25°/h, declared artistic</td><td>Gives time-warp something to show; one constant to zero if disliked.</td><td>Static clouds.</td></tr>
+            <tr><td>The Sun as a generated sprite</td><td>Correct angular size, no asset to ship, occlusion free from the render order.</td><td>A lens-flare add-on.</td></tr>
+            <tr><td>Column-oriented, quantised data files</td><td>Smaller and faster to parse than objects; arrays map one-to-one onto GPU attributes. The satellite snapshot will use the same shape.</td><td>Arrays of objects in JSON.</td></tr>
+            <tr><td>A <span class="mono">uv</span> project only when the first real dependency arrived</td><td>The first pass needed none; NumPy and Pillow did.</td><td>Start with a full project skeleton on day one.</td></tr>
+            <tr><td>Verbose module and file names</td><td>Requested after <span class="mono">build_stars.py</span>; the pipeline will have dozens of these.</td><td>Short names with docstrings.</td></tr>
+            <tr><td>TypeScript 5.x, not 7</td><td>The Svelte tooling targets 5.x; the Go-based 7 is too new for it.</td><td>TypeScript 7.0.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="p1-measurements"><span class="n">1.5</span>Measurements</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Quantity</th><th>First pass</th><th>After review</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td>Source files · lines</td><td class="num">25 · 1,878</td><td class="num">31 · 2,667</td><td>TypeScript, Svelte, CSS, Python</td></tr>
+            <tr><td>Type check</td><td class="num">0 errors</td><td class="num">0 errors</td><td><span class="mono">svelte-check</span>, 561 files</td></tr>
+            <tr><td>App bundle, gzipped</td><td class="num">160 KB</td><td class="num">165 KB</td><td>Three.js included</td></tr>
+            <tr><td>First-paint payload</td><td class="num">3.5 MB</td><td class="num">2.0 MB</td><td>Smaller <em>and</em> sharper: tiered WebP</td></tr>
+            <tr><td>Full-detail payload</td><td class="num">—</td><td class="num">+5.5 MB</td><td>8192 day/night, 4096 clouds; cached thereafter</td></tr>
+            <tr><td>Earth source resolution</td><td class="num">5,400 px</td><td class="num">21,600 px</td><td>Delivered at 8,192</td></tr>
+            <tr><td>Stars plotted</td><td class="num">9,096</td><td class="num">119,613</td><td>Yale BSC5 → HYG v4.4</td></tr>
+            <tr><td>Stars summed for the Milky Way</td><td class="num">—</td><td class="num">2,539,913</td><td>Tycho-2; 2,494,444 fainter than V 8 contribute</td></tr>
+            <tr><td>Pipeline run times</td><td class="num">&lt;1 s</td><td class="num">18 s · 2 s · 7 s</td><td>textures · stars · Milky Way</td></tr>
+            <tr><td>Raw data on disk (git-ignored)</td><td class="num">3.9 MB</td><td class="num">256 MB</td><td>None of it ships</td></tr>
+            <tr><td>Frame rate</td><td class="num">240 fps</td><td class="num">pending</td><td>Jack's RTX 5070; the embedded pane cannot measure it</td></tr>
+            <tr><td>Sub-solar point check</td><td colspan="2" class="num">4.4° N, 62.5° W at 16:06 UTC, 11 Sep</td><td>Correct declination for the date and longitude for the hour</td></tr>
+            <tr><td>Brightest star in catalogue and on screen</td><td class="num">Sirius, V −1.46</td><td class="num">Sirius, V −1.44</td><td>Yale and HYG values respectively</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Two things we could not measure well deserve saying. The frame rate cannot be read in the embedded browser pane, which pauses animation when it is not displayed; the 240 fps figure is Jack's reading of the first pass on his own display, and the second pass — two more full-screen shells and thirteen times the star points — is awaiting his. And the star brightness, Milky Way intensity and cloud opacity were calibrated from downscaled captures; the sliders exist so that the defaults can be set from a full-resolution view and then baked in.</p>
+
+      <h3 id="p1-next"><span class="n">1.6</span>What this enables next</h3>
+      <p>The satellite layer has a place waiting for it: the <span class="mono">world</span> group, in the inertial frame the propagator works in, with GMST already computed by the same formula the propagator library uses. A Web Worker will run SGP4 over every element set about once a second and post positions and velocities in a typed array; the main thread will extrapolate between updates and draw one point cloud beside the Earth, with an orbit path for whatever is selected. Nothing in the globe needs to change for that to happen.</p>
+      <p>The pipeline pattern is proven: a raw upstream file, a module that validates and reshapes it, a small column-oriented file the browser turns straight into GPU attributes. The satellite snapshot — element sets plus catalogue metadata, refreshed every two hours under CelesTrak's one-download rule — is the next module in that pattern, and the daily archive it will keep is the foundation of every history feature the plan describes.</p>
+      <p>And the asset weights measured here are exactly what a static host would serve. Nothing stands between the current build and a public URL except the decision to put it there.</p>
+    </section>
+
+    <section id="references">
+      <h2>References</h2>
+      <ul class="sources">
+        <li>NASA Earth Observatory / Visible Earth — Blue Marble Next Generation (Stöckli et al., 2005), Black Marble 2016 (Román et al., 2018), Blue Marble cloud composite. Public domain. <a href="https://visibleearth.nasa.gov/">visibleearth.nasa.gov</a></li>
+        <li>Nash, D. — HYG Database v4.4 (Hipparcos, Yale Bright Star Catalogue 5th ed., Gliese 3rd ed.). CC BY-SA 4.0. <a href="https://codeberg.org/astronexus/hyg">codeberg.org/astronexus/hyg</a></li>
+        <li>Høg, E. et al. (2000) — The Tycho-2 Catalogue of the 2.5 million brightest stars. A&amp;A 355, L27. VizieR I/259. <a href="https://cdsarc.cds.unistra.fr/viz-bin/cat/I/259">cdsarc.cds.unistra.fr</a></li>
+        <li>Hoffleit, D. &amp; Warren, W. H. (1991) — Yale Bright Star Catalogue, 5th revised ed. VizieR V/50. Used in the first pass.</li>
+        <li>Vallado, D. A. — Fundamentals of Astrodynamics and Applications: the GMST polynomial and the low-precision solar position algorithm (also Astronomical Almanac, section C).</li>
+        <li>NIMA TR8350.2 — World Geodetic System 1984: ellipsoid constants.</li>
+        <li>CelesTrak usage policy, T. S. Kelso, revised 26 March 2026. <a href="https://celestrak.org/usage-policy.php">celestrak.org/usage-policy.php</a></li>
+        <li>Three.js r186, Svelte 5.57, Vite 8.3, TypeScript 5.9, Node.js 24.19, Python 3.14.3, uv 0.12.13, NumPy 2.5.3, Pillow 12.3.0.</li>
+      </ul>
+    </section>
+
+    <section id="revisions">
+      <h2>Revision log</h2>
+      <div class="tablewrap">
+        <table class="revlog">
+          <thead><tr><th>Date</th><th>Change</th></tr></thead>
+          <tbody>
+            <tr><td class="num">2026-09-11</td><td>Journal begun. Part 1, The Globe, written covering the framework build (commit 7a3e84d) and the review revisions (commit f16d9b8) as one account.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </article>
+</div>
