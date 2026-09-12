@@ -127,6 +127,12 @@ export class Globe {
   private readonly selPos = new Vector3();
   private readonly selVel = new Vector3();
 
+  // Camera flight toward a satellite: the direction to aim at is re-read every frame so a
+  // moving target stays centred; the distance never changes.
+  private flight: { index: number; startDir: Vector3; startedAt: number; durationMs: number } | null = null;
+  private readonly flyDir = new Vector3();
+  private readonly flyTarget = new Vector3();
+
   constructor(canvas: HTMLCanvasElement, opts: GlobeOptions) {
     this.opts = opts;
 
@@ -145,6 +151,8 @@ export class Globe {
     this.controls.zoomSpeed = 0.7;
     this.controls.minDistance = WGS84_A_KM + 250; // never below 250 km altitude
     this.controls.maxDistance = 140_000;
+    // A drag interrupts any flight in progress.
+    this.controls.addEventListener('start', () => (this.flight = null));
 
     this.earthGroup.scale.set(1, WGS84_B_KM / WGS84_A_KM, 1);
     this.earthGroup.add(this.atmosphere.mesh, this.graticule.root);
@@ -253,6 +261,35 @@ export class Globe {
     return this.satellites;
   }
 
+  /** Swing the camera round to look down on satellite `index`, keeping the current distance. */
+  flyToSatellite(index: number, durationMs = 900): void {
+    if (!this.satellites || index < 0) return;
+    // startedAt is set on the first frame the target has a position — the layer may still be loading.
+    this.flight = { index, startDir: this.camera.position.clone().normalize(), startedAt: -1, durationMs };
+  }
+
+  cancelFlight(): void {
+    this.flight = null;
+  }
+
+  private updateFlight(now: number, simMs: number): void {
+    const f = this.flight;
+    const layer = this.satellites;
+    if (!f || !layer) return;
+    if (!layer.worldPosition(f.index, simMs, this.flyTarget)) return; // no positions yet; keep waiting
+    if (f.startedAt < 0) {
+      f.startedAt = now;
+      f.startDir.copy(this.camera.position).normalize();
+    }
+    const t = Math.min(1, (now - f.startedAt) / f.durationMs);
+    const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const dist = this.camera.position.length();
+    this.flyDir.copy(f.startDir).lerp(this.flyTarget.normalize(), ease).normalize();
+    this.camera.position.copy(this.flyDir).multiplyScalar(dist);
+    this.camera.lookAt(0, 0, 0);
+    if (t >= 1) this.flight = null;
+  }
+
   /** Index of the satellite under a pointer position (CSS px within the canvas), or −1. */
   pickSatellite(clientX: number, clientY: number, radiusPx = 9): number {
     const layer = this.satellites;
@@ -325,6 +362,7 @@ export class Globe {
     const dist = this.camera.position.length();
     this.controls.rotateSpeed = Math.min(0.6, Math.max(0.02, ((dist - WGS84_A_KM) / dist) * 0.55));
     this.controls.update();
+    this.updateFlight(nowReal, simMs);
 
     const drift = cloudOffset(simMs);
     this.earth?.update(this.sunScene, this.camera.position, drift);

@@ -4,6 +4,8 @@
   import { OBJECT_TYPE_LABELS, OBJECT_TYPES, REGIME_LABELS, REGIMES } from '../lib/orbits/SatelliteCatalog';
   import { launchSiteLabel, OPS_STATUS_LABELS, ownerLabel, RCS_LABELS } from '../lib/orbits/satcatCodes';
   import { TYPE_COLORS } from '../lib/globe/satellites';
+  import { settings } from '../lib/state/settings.svelte';
+  import { GROUPS } from '../lib/orbits/constellations';
   import { formatAgeDays, formatEpoch, formatKm, formatLat, formatLon, formatPeriod } from '../lib/format';
 
   const item = $derived.by(() => {
@@ -39,6 +41,8 @@
       epochMs,
       stale: cat.stale[i] === 1,
       groups: d.GROUPS[i] ?? [],
+      groupIndex: cat.group[i],
+      groupLabel: cat.group[i] >= 0 ? GROUPS[cat.group[i]].label : '',
     };
   });
 
@@ -54,8 +58,23 @@
         <div class="name">{item.name}</div>
         <div class="sub mono">{item.norad} · {item.intl} · {item.type}</div>
       </div>
-      <button class="close" onclick={() => catalog.clearSelection()} aria-label="Close" title="Deselect">×</button>
+      <div class="actions">
+        <button class="btn small" onclick={() => catalog.select(item.i, true)} title="Swing the camera round to this object">Locate</button>
+        <button class="close" onclick={() => catalog.clearSelection()} aria-label="Close" title="Deselect">×</button>
+      </div>
     </header>
+    {#if item.groupLabel}
+      <button
+        class="group"
+        class:is-active={settings.pick.group === item.groupIndex}
+        onclick={() => {
+          settings.pick.group = settings.pick.group === item.groupIndex ? -1 : item.groupIndex;
+        }}
+        title="Pick this group out on the globe"
+      >
+        {item.groupLabel}
+      </button>
+    {/if}
 
     <div class="eyebrow section">Now</div>
     <dl class="readout">
@@ -137,6 +156,36 @@
     margin-top: 2px;
     font-size: 11.5px;
     color: var(--muted);
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn.small {
+    height: 24px;
+    font-size: 12px;
+    padding: 0 8px;
+  }
+
+  .group {
+    margin-top: 8px;
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border: 1px solid var(--panel-border);
+    border-radius: 3px;
+    color: var(--muted);
+  }
+
+  .group:hover,
+  .group.is-active {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .close {

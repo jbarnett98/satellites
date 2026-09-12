@@ -3,6 +3,7 @@
   import TopBar from './ui/TopBar.svelte';
   import TimeControls from './ui/TimeControls.svelte';
   import LayersPanel from './ui/LayersPanel.svelte';
+  import GroupsPanel from './ui/GroupsPanel.svelte';
   import StatusBar from './ui/StatusBar.svelte';
   import ObjectCard from './ui/ObjectCard.svelte';
   import HoverLabel from './ui/HoverLabel.svelte';
@@ -24,6 +25,10 @@
   {#if settings.layersOpen}
     <div class="chrome layers">
       <LayersPanel />
+    </div>
+  {:else if settings.groupsOpen}
+    <div class="chrome layers">
+      <GroupsPanel />
     </div>
   {/if}
 

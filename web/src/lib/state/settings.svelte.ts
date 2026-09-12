@@ -17,6 +17,18 @@ export interface SatelliteSettings {
   earthShadow: boolean;
   /** Draw one revolution of the selected object's orbit. */
   orbitPath: boolean;
+  /** Per OBJECT_TYPES code: payload, rocket body, debris, unknown. */
+  types: boolean[];
+}
+
+/** A group or owner the visitor has picked out of the catalogue. */
+export interface GroupPick {
+  /** Index into GROUPS (constellations.ts), or −1. */
+  group: number;
+  /** SATCAT owner code, or null. */
+  owner: string | null;
+  /** Dim everything else, or hide it. */
+  mode: 'dim' | 'hide';
 }
 
 export const LAYER_LABELS: Record<LayerName, { label: string; hint: string }> = {
@@ -49,7 +61,19 @@ class Settings {
     sizeScale: 1,
     earthShadow: true,
     orbitPath: true,
+    types: [true, true, true, true],
   });
+  pick = $state<GroupPick>({ group: -1, owner: null, mode: 'dim' });
+  groupsOpen = $state(false);
+
+  get hasPick(): boolean {
+    return this.pick.group >= 0 || this.pick.owner !== null;
+  }
+
+  clearPick(): void {
+    this.pick.group = -1;
+    this.pick.owner = null;
+  }
 }
 
 export const settings = new Settings();

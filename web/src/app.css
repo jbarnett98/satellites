@@ -33,7 +33,7 @@ body,
 #app {
   height: 100%;
   margin: 0;
-  overflow: hidden;
+  overflow: clip; /* never scrollable, not even by focus() or scrollIntoView() */
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-ui);

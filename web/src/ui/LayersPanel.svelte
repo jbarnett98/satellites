@@ -96,7 +96,7 @@
     gap: 4px;
     padding: 10px 12px 12px;
     width: 330px;
-    max-height: calc(100vh - 90px);
+    max-height: calc(100vh - 300px); /* stops above the status bar */
     overflow-y: auto;
     background: var(--panel-strong);
   }

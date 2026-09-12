@@ -4,7 +4,7 @@ This file is my standing brief. It is loaded into context every session in this 
 Read it before doing anything. If something here conflicts with what Jack says in chat,
 Jack wins — then update this file so it stays true.
 
-Last updated: 2026-09-11 (Stage 4 complete: satellite layer — see §10).
+Last updated: 2026-09-12 (Stage 5 complete: search and groups — see §10).
 
 Visual calibration notes (so I don't re-derive them): star size/alpha curves live in
 `stars.ts` (`magToSize`, `magToAlpha`). Cloud opacity 0.42 was Jack's "very subtle". Orbit
@@ -159,15 +159,19 @@ atmospheric-perspective/            (folder is literally "Satellite Platform" on
     public/textures/earth/          day-{2048,4096,8192}, night-{2048,8192}, clouds-{2048,4096} .webp
     public/data/sky/                stars-hyg.bin (Int16×4 per star, 934 KB) + stars-hyg.json (meta, names)
     src/lib/astro/                  time.ts (JD, GMST), sun.ts, frames.ts (WGS84, ECI↔scene, ECI→ECEF→geodetic)
-    src/lib/orbits/                 loadOrbitSnapshot.ts, SatelliteCatalog.ts, propagation.worker.ts,
-                                    PropagationEngine.ts, satcatCodes.ts — plain data + worker, no Three/Svelte
+    src/lib/orbits/                 loadOrbitSnapshot.ts, SatelliteCatalog.ts (codes, masks, group index, owner counts),
+                                    propagation.worker.ts, PropagationEngine.ts, satcatCodes.ts,
+                                    constellations.ts (43 GROUPS rules, assignGroups, summariseObjects),
+                                    searchCatalog.ts (ranked scan + aliases) — plain data + worker, no Three/Svelte
     src/lib/globe/                  Globe.ts (loop, scene graph, setSatellites/pickSatellite), earth.ts, clouds.ts,
                                     atmosphere.ts, stars.ts, sun.ts, graticule.ts,
-                                    satellites.ts (SatelliteLayer), orbitPath.ts — Three only, no Svelte
+                                    satellites.ts (SatelliteLayer: aEmphasis dimming, worldPosition), orbitPath.ts;
+                                    Globe.flyToSatellite — Three only, no Svelte
     src/lib/state/                  clock / settings / status / catalog (.svelte.ts, runes classes)
     src/ui/                         GlobeCanvas (the one Svelte↔Three bridge; loads satellites, pointer
-                                    picking, hot-swap poll), TopBar, TimeControls, LayersPanel, StatusBar,
-                                    ObjectCard, HoverLabel
+                                    picking, hot-swap poll, masks, URL ?sat=&group=), TopBar (+SearchBox, Groups),
+                                    TimeControls, LayersPanel, GroupsPanel, StatusBar, ObjectCard (Locate, group chip),
+                                    HoverLabel, SearchBox
   pipeline/                         uv project (pyproject.toml, uv.lock, .venv ignored)
     ap_pipeline/paths.py            ROOT / RAW / WEB_PUBLIC and output folders
     ap_pipeline/textures/build_earth_textures_from_nasa.py
@@ -313,13 +317,20 @@ All three document types (plan, briefs, journal) use one visual family so they r
 | 2 | Globe polish: 8k textures, clouds, Sun, HYG stars, Milky Way, controls | 2026-09-11 | `docs/briefs/02-globe-polish.html` · https://claude.ai/code/artifact/5bda8a5d-9661-4d3d-9c9c-2ef8edb6196d | Part 1 — The Globe |
 | 3 | Orbit pipeline: CelesTrak fetch discipline, sgp4 validation, snapshot, archive, hourly schedule | 2026-09-11 | `docs/briefs/03-orbit-pipeline.html` · https://claude.ai/code/artifact/41f64269-6dc4-4b45-9839-fe02ce9e2b54 | Part 2 — The Orbit Pipeline |
 | 4 | Satellite layer: worker SGP4, GPU points, hover/select/orbit/card, filters, hot-swap | 2026-09-11 | `docs/briefs/04-satellite-layer.html` · https://claude.ai/code/artifact/65925fba-5555-4a1e-a97f-49754d13c95b | Part 3 — The Satellite Layer |
+| 5 | Search and groups: search box + aliases, 43 constellations/fleets, owners, type chips, dim/hide, fly-to, ?sat=&group= links | 2026-09-12 | `docs/briefs/05-search-and-groups.html` · https://claude.ai/code/artifact/b81b3441-6fbb-4263-85de-4e26dcc857ac | pending Jack's yes (would be Part 4 — Finding Things) |
 
 Commits: Stage 1 `7a3e84d`, Stage 2 `f16d9b8`, journal `d097609`, Stage 3 `a0ba44a`, Stage 4
-(see git log). Jack said "yes commit" at the end of Stage 1 → **commit at the end of every
-stage** (one commit per stage, message "Stage N: <name>"); still never push without being asked.
+`2749616`, Milky Way removal `05b5893`, journal 2+3 `2f96f9a`, Stage 5 (see git log). Jack said
+"yes commit" at the end of Stage 1 → **commit at the end of every stage** (one commit per
+stage, message "Stage N: <name>"). Since 2026-09-12 (remote added at Jack's request) I also
+**push at the end of each stage** — I told him so and he didn't object; stop if he says so.
 
-Open with Jack after Stage 4: Space-Track — he has an account, needs the ODR before the public
-snapshot can carry Space-Track data; credentials go in git-ignored `pipeline/.env`, never chat.
+Open with Jack after Stage 5: journal Part 4 approval; Space-Track — he has an account, needs the
+ODR before the public snapshot can carry Space-Track data; credentials go in git-ignored
+`pipeline/.env`, never chat. Stage 5 facts: CelesTrak names Hubble `HST` and Tiangong
+`CSS (TIANHE)` etc. — the alias table in `searchCatalog.ts` covers that; constellation rules
+are payload-only (IRIDIUM/FENGYUN would otherwise catch their debris); the app shell is
+`overflow: clip` because a programmatic focus once scrolled it sideways.
 
 Journal: `docs/journal/atmospheric-perspective-journal.html` ·
 https://claude.ai/code/artifact/52b246d3-75b9-42f9-88e2-5dfd3fb9de1e (redeploy this same file

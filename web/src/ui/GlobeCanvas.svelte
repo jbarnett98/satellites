@@ -9,6 +9,7 @@
   import { settings } from '../lib/state/settings.svelte';
   import { status } from '../lib/state/status.svelte';
   import { catalog } from '../lib/state/catalog.svelte';
+  import { GROUPS, GROUP_BY_ID } from '../lib/orbits/constellations';
 
   /** How often an open page asks whether the pipeline has published a newer snapshot. */
   const SNAPSHOT_POLL_MS = 10 * 60_000;
@@ -50,6 +51,7 @@
       catalog.hovered = -1;
       catalog.selected = prevNorad >= 0 ? cat.indexOfNorad(prevNorad) : -1;
       catalog.phase = 'ready';
+      if (!previous) applyUrlState(cat);
 
       // The first positions arrive a frame or two after attachment; time them.
       const tFirst = await new Promise<number>((resolve) => {
@@ -74,6 +76,34 @@
       catalog.phase = 'error';
       catalog.error = err instanceof Error ? err.message : String(err);
     }
+  }
+
+  // ---------------------------------------------------------------- shareable URLs: ?sat=25544&group=starlink
+
+  let urlApplied = false;
+
+  function applyUrlState(cat: SatelliteCatalog): void {
+    if (urlApplied) return;
+    urlApplied = true;
+    const params = new URLSearchParams(location.search);
+    const sat = Number(params.get('sat'));
+    if (Number.isFinite(sat) && sat > 0) {
+      const i = cat.indexOfNorad(sat);
+      if (i >= 0) catalog.select(i, true);
+    }
+    const group = params.get('group');
+    if (group && GROUP_BY_ID.has(group)) settings.pick.group = GROUP_BY_ID.get(group)!;
+  }
+
+  function writeUrlState(): void {
+    const cat = catalog.catalog;
+    if (!cat) return;
+    const params = new URLSearchParams();
+    if (catalog.selected >= 0) params.set('sat', String(cat.data.NORAD_CAT_ID[catalog.selected]));
+    if (settings.pick.group >= 0) params.set('group', GROUPS[settings.pick.group].id);
+    const qs = params.toString();
+    const next = `${location.pathname}${qs ? `?${qs}` : ''}`;
+    if (next !== `${location.pathname}${location.search}`) history.replaceState(null, '', next);
   }
 
   async function checkForNewSnapshot(g: Globe): Promise<void> {
@@ -203,9 +233,17 @@
   $effect(() => {
     const l = layer;
     if (!l) return;
-    const { on, active, debrisClouds } = settings.satellites;
+    const { on, active, debrisClouds, types } = settings.satellites;
     l.setVisible(on);
-    const mask = l.catalog.visibilityMask({ active, debrisClouds });
+    const mask = l.catalog.visibilityMask({ active, debrisClouds, types: [...types] });
+    // A picked-out group either dims the rest (emphasis) or removes it (visibility).
+    const members = l.catalog.membershipMask({ group: settings.pick.group, owner: settings.pick.owner });
+    if (members && settings.pick.mode === 'hide') {
+      for (let i = 0; i < mask.length; i++) mask[i] &= members[i];
+      l.setEmphasisMask(null);
+    } else {
+      l.setEmphasisMask(members);
+    }
     l.setVisibleMask(mask);
     // A filter that hides the selected or hovered object also clears it in the UI.
     untrack(() => {
@@ -236,6 +274,20 @@
 
   $effect(() => {
     layer?.setHovered(catalog.hovered);
+  });
+
+  // A selection made from search or a link also swings the camera round.
+  $effect(() => {
+    const i = catalog.flyRequest;
+    if (i < 0 || !globe || !layer) return;
+    globe.flyToSatellite(i);
+    catalog.flyRequest = -1;
+  });
+
+  $effect(() => {
+    void catalog.selected;
+    void settings.pick.group;
+    if (catalog.ready) writeUrlState();
   });
 
   const cursor = $derived(catalog.hovered >= 0 ? 'pointer' : 'grab');

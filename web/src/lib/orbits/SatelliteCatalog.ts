@@ -7,6 +7,7 @@
 
 import type { OmmColumns, OrbitSnapshot, SnapshotColumns } from './loadOrbitSnapshot';
 import { OMM_FIELDS } from './loadOrbitSnapshot';
+import { assignGroups, GROUPS } from './constellations';
 
 /** Object classes as SATCAT codes them; the index is the code used on the GPU. */
 export const OBJECT_TYPES = ['PAY', 'R/B', 'DEB', 'UNK'] as const;
@@ -37,6 +38,14 @@ export interface CatalogFilter {
   active: boolean;
   /** Objects that appear only in the three fragmentation-cloud groups. */
   debrisClouds: boolean;
+  /** Per OBJECT_TYPES code; omit to show all types. */
+  types?: boolean[];
+}
+
+/** What a visitor has picked out: a named group (index into GROUPS) and/or an owner code. */
+export interface CatalogSelection {
+  group: number;
+  owner: string | null;
 }
 
 export interface CatalogCounts {
@@ -62,6 +71,12 @@ export class SatelliteCatalog {
   readonly debrisCloudOnly: Uint8Array;
   /** 1 if the pipeline flagged the element set as stale (> 14 days old). */
   readonly stale: Uint8Array;
+  /** Index into GROUPS (constellations.ts), or −1. */
+  readonly group: Int16Array;
+  /** Objects per GROUPS entry. */
+  readonly groupCounts: number[];
+  /** Owner codes with their object counts, most first. */
+  readonly ownerCounts: [string, number][];
   readonly counts: CatalogCounts;
 
   private readonly byNorad = new Map<number, number>();
@@ -108,6 +123,16 @@ export class SatelliteCatalog {
     }
 
     this.counts = { total: n, active: n - debrisClouds, debrisClouds, byType, byRegime, stale };
+
+    this.group = assignGroups(this);
+    this.groupCounts = new Array<number>(GROUPS.length).fill(0);
+    const owners = new Map<string, number>();
+    for (let i = 0; i < n; i++) {
+      if (this.group[i] >= 0) this.groupCounts[this.group[i]]++;
+      const owner = d.OWNER[i];
+      if (owner) owners.set(owner, (owners.get(owner) ?? 0) + 1);
+    }
+    this.ownerCounts = [...owners.entries()].sort((a, b) => b[1] - a[1]);
   }
 
   indexOfNorad(noradId: number): number {
@@ -117,10 +142,32 @@ export class SatelliteCatalog {
   /** One byte per object: 1 = shown under this filter. */
   visibilityMask(filter: CatalogFilter): Uint8Array {
     const mask = new Uint8Array(this.count);
+    const types = filter.types;
     for (let i = 0; i < this.count; i++) {
-      mask[i] = (this.debrisCloudOnly[i] ? filter.debrisClouds : filter.active) ? 1 : 0;
+      const on = (this.debrisCloudOnly[i] ? filter.debrisClouds : filter.active) && (!types || types[this.typeCode[i]]);
+      mask[i] = on ? 1 : 0;
     }
     return mask;
+  }
+
+  /** 1 for members of the selection (group and/or owner), or null when nothing is selected. */
+  membershipMask(sel: CatalogSelection): Uint8Array | null {
+    if (sel.group < 0 && !sel.owner) return null;
+    const mask = new Uint8Array(this.count);
+    const d = this.data;
+    for (let i = 0; i < this.count; i++) {
+      const inGroup = sel.group < 0 || this.group[i] === sel.group;
+      const inOwner = !sel.owner || d.OWNER[i] === sel.owner;
+      mask[i] = inGroup && inOwner ? 1 : 0;
+    }
+    return mask;
+  }
+
+  /** Indices of the objects a mask admits. */
+  indicesOf(mask: Uint8Array): number[] {
+    const out: number[] = [];
+    for (let i = 0; i < mask.length; i++) if (mask[i]) out.push(i);
+    return out;
   }
 
   /** The 17 OMM columns only — what the propagation worker needs. */

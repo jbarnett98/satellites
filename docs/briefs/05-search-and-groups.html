@@ -1,0 +1,325 @@
+<title>Stage 05 · Search and Groups</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F4F6F9; --surface: #FFFFFF; --ink: #1A2230; --muted: #5B6677; --line: #D3DAE3;
+    --accent: #0B7580; --accent-soft: #DFEFF0; --amber: #B45A10; --amber-soft: #FBEEDD;
+    --green: #2F7D4F; --green-soft: #E3F2E8; --code-bg: #EAEFF4; --shadow: 0 1px 2px rgba(26,34,48,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+      --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+      --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+    --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+    --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Source Serif 4", Georgia, serif; font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 96px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 48px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px 16px 64px; } nav.toc { position: static !important; } }
+  header.mast { grid-column: 1 / -1; border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+  .eyebrow { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 46px; line-height: 1.02; margin: 8px 0 12px; text-wrap: balance; }
+  .lede { font-size: 19px; max-width: 66ch; margin: 0 0 20px; }
+  .telemetry { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.7; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 24px; font-variant-numeric: tabular-nums; }
+  .telemetry span { color: var(--muted); } .telemetry b { font-weight: 500; color: var(--ink); }
+  nav.toc { position: sticky; top: 24px; align-self: start; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 600; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--ink); }
+  nav.toc .toc-head { margin-bottom: 8px; }
+  article { max-width: 760px; min-width: 0; }
+  section { padding: 12px 0 28px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  section:last-of-type { border-bottom: 0; }
+  h2 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 30px; line-height: 1.1; margin: 8px 0 14px; text-wrap: balance; }
+  h3 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 20px; line-height: 1.2; margin: 26px 0 8px; text-wrap: balance; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; max-width: 70ch; } li { margin-bottom: 5px; }
+  strong { font-weight: 600; }
+  code, .mono { font-family: "IBM Plex Mono", Consolas, monospace; font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+  pre { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 14px; margin: 0 0 14px; overflow-x: auto; white-space: pre; }
+  pre code { background: none; padding: 0; font-size: inherit; } .annot { color: var(--muted); }
+  .note, .warn, .done { margin: 18px 0 20px; padding: 12px 16px 6px; max-width: 70ch; border-top: 2px solid var(--accent); background: var(--accent-soft); }
+  .warn { border-top-color: var(--amber); background: var(--amber-soft); }
+  .done { border-top-color: var(--green); background: var(--green-soft); }
+  .note .eyebrow { color: var(--accent); margin-bottom: 4px; } .warn .eyebrow { color: var(--amber); margin-bottom: 4px; } .done .eyebrow { color: var(--green); margin-bottom: 4px; }
+  .note p:last-child, .warn p:last-child, .done p:last-child { margin-bottom: 8px; }
+  .tablewrap { overflow-x: auto; margin: 6px 0 18px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.45; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 8px; border-radius: 3px; white-space: nowrap; }
+  .pill.live { background: var(--green-soft); color: var(--green); }
+  .pill.partial { background: var(--accent-soft); color: var(--accent); }
+  .pill.todo { background: var(--code-bg); color: var(--muted); }
+  .pill.risk { background: var(--amber-soft); color: var(--amber); }
+  .opt { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .opt:last-of-type { border-bottom: 1px solid var(--line); }
+  .opt .o-key { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 26px; line-height: 1; color: var(--accent); }
+  .opt h4 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-size: 19px; margin: 0 0 6px; }
+  .opt p { margin-bottom: 6px; }
+  .opt .tradeoff { font-size: 15px; color: var(--muted); }
+  figure { margin: 18px 0 22px; }
+  figure svg { max-width: 100%; height: auto; display: block; color: var(--ink); background: var(--surface); border: 1px solid var(--line); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; max-width: 70ch; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; }
+  .tree { font-size: 12.5px; }
+  .tree .d { color: var(--accent); font-weight: 500; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">Atmospheric Perspective · Stage brief 05 · 12 Sep 2026</div>
+    <h1>Finding things: search, constellations, owners, and links that open on a satellite</h1>
+    <p class="lede">A visitor can now type a name, a catalogue number or a designator and be flown to the object; pick out any of 43 constellations and fleets, or any of the top owners, and see the rest of the catalogue recede while a panel describes what they picked — how many, which shells, how high, when launched; filter by object type; and send someone a link that opens the site on that satellite with that group picked out. No new data: all of it is interface over the catalogue the page already holds.</p>
+    <div class="telemetry" aria-label="Stage numbers">
+      <div><span>GROUPS </span><b>43</b> <span>· objects grouped </span><b>16,544 of 19,246</b></div>
+      <div><span>SEARCH </span><b>&lt; 2 ms</b> <span>per keystroke, 19k names</span></div>
+      <div><span>LARGEST </span><b>Starlink 11,129</b> <span>· 189 launched in 30 d</span></div>
+      <div><span>FLY-TO </span><b>900 ms</b> <span>· distance kept</span></div>
+      <div><span>LINKS </span><b>?sat=25544&amp;group=starlink</b></div>
+      <div><span>NEW CODE </span><b>4 files</b> <span>· bundle +6 KB gzipped</span></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow toc-head">Contents</div>
+    <ol>
+      <li><a href="#where">Where the project is</a></li>
+      <li><a href="#completed">What we just completed</a></li>
+      <li><a href="#structure">Under the hood: structure</a></li>
+      <li><a href="#mechanism">Under the hood: how a pick reaches the pixels</a></li>
+      <li><a href="#decisions">Decisions taken</a></li>
+      <li><a href="#next">Immediate next avenues</a></li>
+      <li><a href="#risks">Open questions and risks</a></li>
+      <li><a href="#run">Running it</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section id="where">
+      <h2>Where the project is</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Component</th><th>State</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Globe · sky · time</td><td><span class="pill live">Live</span></td><td>The Milky Way was removed at your request on 12 Sep; stars remain.</td></tr>
+            <tr><td>Orbit pipeline</td><td><span class="pill live">Running</span></td><td>Unattended since 11 Sep; fetching every second hour as designed (snapshot <span class="mono">20260912T1417Z</span> at the time of writing, 19,246 objects).</td></tr>
+            <tr><td>Satellite layer</td><td><span class="pill live">Live</span></td><td>As Stage 4, plus an emphasis channel: members of a picked group draw normally, the rest recede to 10%.</td></tr>
+            <tr><td>Search</td><td><span class="pill live">New</span></td><td>Top-bar box, <span class="mono">/</span> to focus, keyboard navigation, aliases for names people use (Hubble → HST, Tiangong → CSS).</td></tr>
+            <tr><td>Groups</td><td><span class="pill live">New</span></td><td>43 constellations and fleets in six categories, the top 14 owners, four object-type chips, dim-or-hide, and a summary of whatever is picked.</td></tr>
+            <tr><td>Fly-to</td><td><span class="pill live">New</span></td><td>Selecting from search, a link, or the card's Locate button swings the camera round to the object.</td></tr>
+            <tr><td>Shareable links</td><td><span class="pill live">New</span></td><td><span class="mono">?sat=&lt;NORAD&gt;&amp;group=&lt;id&gt;</span> written as you select and read on load.</td></tr>
+            <tr><td>Full catalogue (Space-Track)</td><td><span class="pill risk">Open</span></td><td>Unchanged: your account exists; the ODR gates public display.</td></tr>
+            <tr><td>Hosting</td><td><span class="pill todo">Local only</span></td><td>Unchanged.</td></tr>
+            <tr><td>Repository</td><td><span class="pill live">Public</span></td><td>github.com/jbarnett98/satellites — 9 commits after this stage, pushed.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="completed">
+      <h2>What we just completed</h2>
+      <ul>
+        <li><strong>Rules from the data, not from memory.</strong> Before writing a single constellation rule we counted name prefixes and owner codes in the live snapshot. That is where "HULIANWANG" (China's Guowang, 191 objects) and "GEESAT" (Geely, 63) came from, and why <span class="mono">IRIDIUM</span> and <span class="mono">FENGYUN</span> rules apply to payloads only — otherwise the Iridium 33 and Fengyun-1C debris would have joined the fleets they came from. Each rule's count is in the panel; 16,544 of 19,246 objects fall into a group, the rest are one-off payloads, rocket bodies and unknowns.</li>
+        <li><strong>Search.</strong> A linear scan over every name per keystroke — under two milliseconds for 19k — ranked exact number › name starts with › designator starts with › name contains › number starts with, with multi-word queries requiring every word. Results are capped at 40, chosen by rank bucket in catalogue order so the scan never sorts eleven thousand Starlinks. An alias table maps common names onto catalogue names. <span class="mono">/</span> focuses the box from anywhere; ↑↓ Enter Esc work as expected; the empty box offers example queries.</li>
+        <li><strong>Groups panel.</strong> Six categories — broadband megaconstellations, communications and IoT, navigation, Earth observation and weather, stations and recent launches, debris clouds — each row with operator and count; then the top owners by SATCAT code with names spelled out; then payload / rocket body / debris / unknown chips. Picking a group and an owner combine (Starlink ∩ United States is a legitimate if dull question; OneWeb ∩ United Kingdom less so). The summary block describes the picked set: objects and how many launched in the last 30 days, types, regimes, median perigee–apogee, the five most populated inclination bins in half-degree steps, first and latest launch dates, top owners.</li>
+        <li><strong>Two ways to recede.</strong> Dim (default) keeps the rest of the catalogue on screen at 10% alpha and 70% size, so a group reads against its context; Hide removes it, so the group can be studied alone and the object count in the status bar becomes the group's. Hovering and clicking ignore dimmed objects.</li>
+        <li><strong>Fly-to.</strong> The camera swings round to look down on a chosen object over 900 ms with an ease-in-out, keeping its distance; the target's direction is re-read every frame so a moving satellite stays centred; a drag interrupts it; if the layer hasn't produced positions yet (a link opened cold), the flight waits for the first frame instead of giving up.</li>
+        <li><strong>Links.</strong> The address bar follows the selection and the picked group (<span class="mono">history.replaceState</span>, no reload, no history spam); on load, the parameters are applied once the catalogue is ready, with a fly-to for the satellite.</li>
+        <li><strong>Verified:</strong> links for the ISS, Hubble and GPS; alias search for Tiangong (three modules of the Chinese station); selection from results; the flight landing on Tianhe over the Caucasus; Starlink picked out with its four shells summarised; GPS in Hide mode (40 shown). One find on the way: the app shell could be scrolled sideways by a programmatic focus; it is now <span class="mono">overflow: clip</span>.</li>
+      </ul>
+      <div class="done">
+        <div class="eyebrow">Working principles honoured</div>
+        <p>Nothing was fetched, computed in the pipeline, or added as a dependency. Everything in this stage is a few hundred lines of interface over arrays already in memory, which is exactly what the static-first design was meant to make cheap.</p>
+      </div>
+    </section>
+
+    <section id="structure">
+      <h2>Under the hood: structure</h2>
+<pre class="tree"><code><span class="d">web/src/lib/orbits/</span>
+├─ constellations.ts           <span class="annot">GROUPS: 43 rules (name pattern or pipeline group, category, operator); assignGroups → Int16 per object;</span>
+│                              <span class="annot">summariseObjects → counts, inclination bins, median altitudes, launch span, owners</span>
+├─ searchCatalog.ts            <span class="annot">searchCatalog(catalog, query, limit) → ranked hits + total; the alias table</span>
+└─ SatelliteCatalog.ts         <span class="annot">+ group index, groupCounts, ownerCounts; visibilityMask gains types; membershipMask; indicesOf</span>
+<span class="d">web/src/lib/globe/</span>
+├─ satellites.ts               <span class="annot">+ aEmphasis attribute and uDimming uniform; setEmphasisMask; worldPosition; picking skips dimmed points</span>
+└─ Globe.ts                    <span class="annot">+ flyToSatellite / cancelFlight; per-frame flight update; a drag cancels</span>
+<span class="d">web/src/lib/state/</span>
+├─ settings.svelte.ts          <span class="annot">+ satellites.types, pick {group, owner, mode}, groupsOpen, hasPick, clearPick</span>
+└─ catalog.svelte.ts           <span class="annot">+ query, searchOpen, flyRequest; select(index, fly)</span>
+<span class="d">web/src/ui/</span>
+├─ SearchBox.svelte            <span class="annot">the box, its results list, keyboard handling, "/" shortcut, examples</span>
+├─ GroupsPanel.svelte          <span class="annot">categories → rows, owners, type chips, the summary, Dim / Hide, Clear</span>
+├─ TopBar.svelte               <span class="annot">+ SearchBox in the middle column; Groups button; panels are mutually exclusive</span>
+├─ ObjectCard.svelte           <span class="annot">+ Locate button; the object's group as a chip that picks it out</span>
+├─ GlobeCanvas.svelte          <span class="annot">+ masks combine filter × types × pick; fly requests; URL read on load, written on change</span>
+└─ App.svelte                  <span class="annot">+ GroupsPanel in the right-hand slot</span></code></pre>
+      <p>The dependency direction holds: <span class="mono">constellations</span> and <span class="mono">searchCatalog</span> are pure functions over the catalogue with no Three.js or Svelte; the globe learned one new attribute; the interface does the combining.</p>
+    </section>
+
+    <section id="mechanism">
+      <h2>Under the hood: how a pick reaches the pixels</h2>
+      <p>Group membership is decided once, when a snapshot loads: every object gets one small integer, the index of the first rule that matches it (or −1). From then on a pick is two byte-per-object masks recomputed in about a millisecond whenever a setting changes, and the GPU does the rest.</p>
+      <figure>
+        <svg viewBox="0 0 980 300" role="img" aria-label="Flow: at load, assignGroups turns names and pipeline groups into one group index per object. When the visitor picks a group or owner, membershipMask produces one byte per object. In Dim mode that mask becomes the aEmphasis vertex attribute and the shader draws non-members at 10 percent alpha and 70 percent size; in Hide mode it is ANDed into the visibility mask and non-members are moved off-screen. The same masks gate hover and click picking. The summary block is computed from the member indices." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="ee" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+          </defs>
+
+          <text x="20" y="26" font-weight="700" font-size="13">once per snapshot</text>
+          <rect x="20" y="40" width="220" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="60" font-weight="700">assignGroups</text>
+          <text x="30" y="78">43 rules · first match wins</text>
+          <text x="30" y="94">→ Int16 group[i]  ·  ownerCounts</text>
+
+          <text x="290" y="26" font-weight="700" font-size="13">on every change of pick / filter / types (~1 ms)</text>
+          <rect x="290" y="40" width="200" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="60" font-weight="700">membershipMask</text>
+          <text x="300" y="78">group[i] == picked  and/or</text>
+          <text x="300" y="94">OWNER[i] == picked owner</text>
+          <line x1="240" y1="75" x2="288" y2="75" stroke="currentColor" stroke-width="1.4" marker-end="url(#e)"/>
+
+          <rect x="290" y="130" width="200" height="54" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="150" font-weight="700">visibilityMask</text>
+          <text x="300" y="168">active / debris clouds × types</text>
+
+          <!-- dim path -->
+          <rect x="560" y="40" width="190" height="70" fill="none" style="stroke:var(--accent)" stroke-width="1.4"/>
+          <text x="570" y="60" font-weight="700" style="fill:var(--accent)">Dim (default)</text>
+          <text x="570" y="78">members → aEmphasis = 1</text>
+          <text x="570" y="94">others → alpha 10%, size 70%</text>
+          <line x1="490" y1="66" x2="558" y2="66" style="stroke:var(--accent)" stroke-width="1.4" marker-end="url(#ee)"/>
+
+          <!-- hide path -->
+          <rect x="560" y="130" width="190" height="54" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="570" y="150" font-weight="700">Hide</text>
+          <text x="570" y="168">visibility &amp;= members → off-screen</text>
+          <line x1="490" y1="90" x2="558" y2="150" stroke="currentColor" stroke-width="1.4" marker-end="url(#e)"/>
+          <line x1="490" y1="157" x2="558" y2="157" stroke="currentColor" stroke-width="1.4" marker-end="url(#e)"/>
+
+          <!-- gpu -->
+          <rect x="800" y="40" width="160" height="144" fill="none" style="stroke:var(--accent)" stroke-width="1.4"/>
+          <text x="810" y="60" font-weight="700" style="fill:var(--accent)">GPU, every frame</text>
+          <text x="810" y="80">two byte attributes per point</text>
+          <text x="810" y="96">read in the vertex shader;</text>
+          <text x="810" y="112">nothing else changes</text>
+          <text x="810" y="140">hover / click skip</text>
+          <text x="810" y="156">dimmed and hidden points</text>
+          <line x1="750" y1="75" x2="798" y2="75" style="stroke:var(--accent)" stroke-width="1.4" marker-end="url(#ee)"/>
+          <line x1="750" y1="157" x2="798" y2="157" stroke="currentColor" stroke-width="1.4" marker-end="url(#e)"/>
+
+          <!-- summary -->
+          <rect x="290" y="214" width="460" height="60" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="234" font-weight="700">summariseObjects(member indices)</text>
+          <text x="300" y="252">count · launched in 30 d · types · regimes · median perigee/apogee · inclination bins (0.5°) · launch span · owners</text>
+          <text x="300" y="268" style="fill:var(--muted)">one pass over the members; Starlink's 11,129 take ~3 ms</text>
+          <line x1="390" y1="110" x2="390" y2="212" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 4" marker-end="url(#e)"/>
+
+          <text x="20" y="150" font-weight="700" font-size="13">the address bar</text>
+          <text x="20" y="168">?sat=48274&amp;group=starlink</text>
+          <text x="20" y="186">written on change, read on load;</text>
+          <text x="20" y="204">a satellite in the link also</text>
+          <text x="20" y="222">triggers the 900 ms fly-to</text>
+        </svg>
+        <figcaption>One integer per object decides membership; two bytes per object carry it to the GPU. A pick costs about a millisecond and touches nothing in the worker.</figcaption>
+      </figure>
+      <h3>Search, in one paragraph</h3>
+      <p>The query is upper-cased, whitespace-collapsed and passed through the alias table. Every object's name is tested once; a numeric query is compared against the catalogue number first. Each hit gets a rank, and the first 40 are taken bucket by bucket in catalogue order — which is launch order, so "STARLINK" lists the oldest Starlinks first rather than a random forty — and only those forty are sorted by name for display. The total count is reported alongside so the footer can say "first 40 of 11,129".</p>
+      <h3>The flight, in one paragraph</h3>
+      <p>A flight stores the camera's starting direction and the target object's index. Every frame it re-reads the object's current world position (the same extrapolation the shader draws), eases a blend factor from 0 to 1 over 900 ms, interpolates between the two unit directions, and places the camera along the result at its original distance, looking at the Earth's centre. Because the direction is re-read each frame the camera lands on a moving satellite, not where it was when the flight began. A drag cancels it; a request that arrives before the first positions simply waits.</p>
+    </section>
+
+    <section id="decisions">
+      <h2>Decisions taken this stage</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Decision</th><th>Why</th><th>Alternative not taken</th></tr></thead>
+          <tbody>
+            <tr><td>Rules by name pattern, curated, first match wins</td><td>Names are how CelesTrak labels fleets; a 43-row table is auditable and the counts are visible in the panel.</td><td>Group by international designator prefix (one launch = one group — wrong for constellations) or by owner alone (US = 12,621).</td></tr>
+            <tr><td>Constellation rules apply to payloads only</td><td>Keeps Iridium 33 and Fengyun-1C debris out of the fleets; debris clouds come from the pipeline's groups.</td><td>Match everything and special-case "DEB".</td></tr>
+            <tr><td>Linear scan per keystroke, no index</td><td>Under 2 ms for 19k names; an index would be more code for nothing.</td><td>A trigram or prefix index.</td></tr>
+            <tr><td>Rank buckets, capped before sorting</td><td>Sorting 11k Starlink hits with locale-aware compare cost ~300 ms; taking 40 by bucket costs nothing.</td><td>Sort everything, slice.</td></tr>
+            <tr><td>Alias table for common names</td><td>"Hubble" and "Tiangong" returned nothing; the catalogue says HST and CSS.</td><td>Ship a full nickname dataset.</td></tr>
+            <tr><td>Dim by default, Hide as an option</td><td>Context first; isolation on request.</td><td>Hide only.</td></tr>
+            <tr><td>Emphasis as a vertex attribute, not a re-upload of colours</td><td>One byte per object; the shader does the dimming; zero CPU per frame.</td><td>Rewrite the colour buffer on each pick.</td></tr>
+            <tr><td>Picking ignores dimmed objects</td><td>Clicking a 10%-alpha dot you can barely see would be confusing.</td><td>Pick anything visible.</td></tr>
+            <tr><td>Group and owner combine as AND</td><td>Cheap, occasionally useful, never surprising.</td><td>Radio buttons across both lists.</td></tr>
+            <tr><td>Fly-to keeps the camera's distance</td><td>The visitor chose the zoom; the flight only changes where they look.</td><td>Zoom to a fixed altitude above the object.</td></tr>
+            <tr><td>Fly only from search, links and Locate — not from a click</td><td>A click already has the object under the pointer; moving the camera then would be disorienting.</td><td>Fly on every selection.</td></tr>
+            <tr><td><span class="mono">replaceState</span>, not <span class="mono">pushState</span></td><td>Selection changes are not navigation; the back button should leave the site, not step through satellites.</td><td>A history entry per selection.</td></tr>
+            <tr><td>Panels are mutually exclusive</td><td>Both dock at the top right; one at a time keeps the globe visible.</td><td>Stack them.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="next">
+      <h2>Immediate next avenues</h2>
+      <div class="opt">
+        <div class="o-key">A</div>
+        <div>
+          <h4>Observer tools: "above you now" and passes</h4>
+          <p>A location (yours, or a click on the globe), the objects above the horizon, the next passes of the selected object with rise/set and maximum elevation, and a follow camera. The topocentric maths is in satellite.js; it runs in the worker.</p>
+          <p class="tradeoff">The feature people come to a satellite site for; medium effort.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">B</div>
+        <div>
+          <h4>Catalogue explorer: the data as charts</h4>
+          <p>A second view beside the globe: altitude × inclination scatter linked to the globe (brush a region, it highlights), objects by launch year and owner, the Starlink shells as a histogram, oldest objects still up. The summary block in the Groups panel is the seed.</p>
+          <p class="tradeoff">The first "data platform" feature; mostly charts and layout.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">C</div>
+        <div>
+          <h4>Curated stories</h4>
+          <p>A short list of things worth clicking — Vanguard 1 (1958, still up), Hubble, Tianhe, the newest launch, the oldest debris — each a link with a sentence. Trivial now that links exist.</p>
+          <p class="tradeoff">An afternoon; makes the site welcoming to a first-time visitor.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">D</div>
+        <div>
+          <h4>Go public</h4>
+          <p>Cloudflare Pages + R2; links become sendable. Unchanged from the Stage 4 brief.</p>
+          <p class="tradeoff">About a day; $0/month.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="risks">
+      <h2>Open questions and risks</h2>
+      <ul>
+        <li><strong>Rules will drift.</strong> A new constellation appears, a fleet gets renamed, a pattern over-matches. The counts in the panel are the audit; adding a rule is one line. A "changed since last snapshot" check could be added to the pipeline later.</li>
+        <li><strong>"Owner" is the SATCAT country/organisation code</strong>, not the operator: Starlink is "US", OneWeb is "UK". The panel labels them by name but the semantics are SATCAT's.</li>
+        <li><strong>Summaries are computed on the main thread</strong> — ~3 ms for Starlink, trivial for anything else. If the full 35k catalogue arrives and someone picks "United States", it is still under 10 ms.</li>
+        <li><strong>Inclination bins are half a degree</strong>; fleets flown at 53.0° and 53.2° show as one bin. Fine for the summary, not for engineering.</li>
+        <li><strong>Links reference catalogue numbers</strong>, which are stable, but a decayed object vanishes from the snapshot and the link then opens with nothing selected. A short "not in the current catalogue" notice is a small follow-up.</li>
+        <li><strong>The top bar is tight at 1280 px wide</strong> (brand · search · controls). It fits; at 1920 it breathes. Narrower than 1280 is outside the desktop-only remit.</li>
+      </ul>
+    </section>
+
+    <section id="run">
+      <h2>Running it</h2>
+<pre><code>npm run dev                     <span class="annot"># http://localhost:5173 — try /?sat=25544&amp;group=stations or /?group=gps</span>
+npm run check                   <span class="annot"># clean</span>
+npm run build                   <span class="annot"># main 690 KB (184 KB gzipped), worker 21 KB</span></code></pre>
+      <p>In the page: <span class="mono">/</span> to search; type a name, number or designator; Enter or click to select and fly. <strong>Groups</strong> for constellations, owners and types; Dim or Hide; Clear. The card's <strong>Locate</strong> re-centres; its group chip picks the group out. The address bar always holds a link to what you're looking at.</p>
+    </section>
+
+  </article>
+</div>

@@ -56,6 +56,7 @@ const vertexShader = /* glsl */ `
   attribute float aType;
   attribute float aRegime;
   attribute float aVisible;
+  attribute float aEmphasis;    // 1 = member of the selected group, 0 = dimmed
   attribute float aIndex;
 
   uniform float uDt;            // simulation seconds since the positions were exact
@@ -72,6 +73,7 @@ const vertexShader = /* glsl */ `
   uniform float uTypeSizes[4];
   uniform float uSelected;
   uniform float uHovered;
+  uniform float uDimming;       // 1 while a group is picked out, else 0
 
   varying vec3 vColor;
   varying float vAlpha;
@@ -103,6 +105,11 @@ const vertexShader = /* glsl */ `
     shade *= uEarthShadow;
     alpha *= mix(1.0, 0.30, shade);
     col = mix(col, col * vec3(0.55, 0.65, 0.95), shade);
+
+    // A picked-out group: everything else recedes to a faint, smaller dot.
+    float dim = uDimming * (1.0 - aEmphasis);
+    alpha *= mix(1.0, 0.10, dim);
+    size *= mix(1.0, 0.7, dim);
 
     float kind = 0.0;
     if (abs(aIndex - uHovered) < 0.5) { size = max(size * 1.6, 7.0); kind = 1.0; alpha = 1.0; col = vec3(1.0); }
@@ -175,9 +182,12 @@ export class SatelliteLayer {
   private readonly pos: Float32Array;
   private readonly vel: Float32Array;
   private readonly visible: Uint8Array;
+  private readonly emphasis: Uint8Array;
+  private dimming = false;
   private readonly posAttr: BufferAttribute;
   private readonly velAttr: BufferAttribute;
   private readonly visAttr: BufferAttribute;
+  private readonly emphAttr: BufferAttribute;
   private readonly uniforms;
 
   private epochSimMs = NaN;
@@ -200,6 +210,7 @@ export class SatelliteLayer {
     this.pos = new Float32Array(n * 3);
     this.vel = new Float32Array(n * 3);
     this.visible = new Uint8Array(n).fill(1);
+    this.emphasis = new Uint8Array(n).fill(1);
     const index = new Float32Array(n);
     for (let i = 0; i < n; i++) index[i] = i;
 
@@ -207,9 +218,11 @@ export class SatelliteLayer {
     this.posAttr = new BufferAttribute(this.pos, 3).setUsage(DynamicDrawUsage);
     this.velAttr = new BufferAttribute(this.vel, 3).setUsage(DynamicDrawUsage);
     this.visAttr = new BufferAttribute(this.visible, 1).setUsage(DynamicDrawUsage);
+    this.emphAttr = new BufferAttribute(this.emphasis, 1).setUsage(DynamicDrawUsage);
     geometry.setAttribute('position', this.posAttr);
     geometry.setAttribute('velocity', this.velAttr);
     geometry.setAttribute('aVisible', this.visAttr);
+    geometry.setAttribute('aEmphasis', this.emphAttr);
     geometry.setAttribute('aType', new BufferAttribute(catalog.typeCode, 1));
     geometry.setAttribute('aRegime', new BufferAttribute(catalog.regimeCode, 1));
     geometry.setAttribute('aIndex', new BufferAttribute(index, 1));
@@ -232,6 +245,7 @@ export class SatelliteLayer {
       uTypeSizes: { value: TYPE_SIZES.slice() },
       uSelected: { value: -1 },
       uHovered: { value: -1 },
+      uDimming: { value: 0 },
     };
     const material = new ShaderMaterial({
       uniforms: this.uniforms,
@@ -312,6 +326,22 @@ export class SatelliteLayer {
 
   setVisible(on: boolean): void {
     this.root.visible = on;
+  }
+
+  /** Pick out a set of objects: members draw normally, the rest recede. `null` clears it. */
+  setEmphasisMask(mask: Uint8Array | null): void {
+    if (mask) this.emphasis.set(mask);
+    else this.emphasis.fill(1);
+    this.emphAttr.needsUpdate = true;
+    this.dimming = mask !== null;
+    this.uniforms.uDimming.value = this.dimming ? 1 : 0;
+  }
+
+  /** Extrapolated position of object `i` in the world (scene) frame — for the camera to aim at. */
+  worldPosition(i: number, simMs: number, out: Vector3): boolean {
+    if (!this.sample(i, simMs, out)) return false;
+    out.applyMatrix4(this.points.matrixWorld);
+    return true;
   }
 
   setPixelRatio(pr: number): void {
@@ -418,8 +448,9 @@ export class SatelliteLayer {
 
     let best = -1;
     let bestD2 = r2max;
+    const dimming = this.dimming;
     for (let i = 0; i < this.count; i++) {
-      if (!this.visible[i]) continue;
+      if (!this.visible[i] || (dimming && !this.emphasis[i])) continue;
       const o = i * 3;
       const x0 = this.pos[o];
       const y0 = this.pos[o + 1];

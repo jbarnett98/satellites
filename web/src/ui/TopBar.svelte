@@ -2,6 +2,16 @@
   import { clock } from '../lib/state/clock.svelte';
   import { settings } from '../lib/state/settings.svelte';
   import { formatRate, formatUtc } from '../lib/format';
+  import SearchBox from './SearchBox.svelte';
+
+  function toggleLayers() {
+    settings.layersOpen = !settings.layersOpen;
+    if (settings.layersOpen) settings.groupsOpen = false;
+  }
+  function toggleGroups() {
+    settings.groupsOpen = !settings.groupsOpen;
+    if (settings.groupsOpen) settings.layersOpen = false;
+  }
 
   const utc = $derived(formatUtc(clock.simTime));
   const modeLabel = $derived(clock.live ? 'LIVE' : clock.paused ? 'PAUSED' : `SIM ${formatRate(clock.rate)}`);
@@ -12,6 +22,8 @@
     <span class="wordmark">Atmospheric Perspective</span>
     <span class="tag eyebrow">Earth orbit · real time</span>
   </div>
+
+  <SearchBox />
 
   <div class="right">
     <div class="time" title="Simulation time (UTC)">
@@ -45,12 +57,10 @@
       </button>
     </div>
 
-    <button
-      class="btn"
-      class:is-active={settings.layersOpen}
-      aria-expanded={settings.layersOpen}
-      onclick={() => (settings.layersOpen = !settings.layersOpen)}
-    >
+    <button class="btn" class:is-active={settings.groupsOpen || settings.hasPick} aria-expanded={settings.groupsOpen} onclick={toggleGroups}>
+      Groups
+    </button>
+    <button class="btn" class:is-active={settings.layersOpen} aria-expanded={settings.layersOpen} onclick={toggleLayers}>
       Layers
     </button>
   </div>
@@ -58,10 +68,11 @@
 
 <style>
   .bar {
-    display: flex;
+    display: grid;
+    grid-template-columns: max-content minmax(200px, 1fr) max-content;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    justify-items: start;
+    gap: 12px;
     padding: 12px 16px;
     background: linear-gradient(to bottom, rgba(4, 7, 12, 0.8), rgba(4, 7, 12, 0));
   }
@@ -70,6 +81,7 @@
     display: flex;
     align-items: baseline;
     gap: 12px;
+    white-space: nowrap;
   }
 
   .wordmark {
@@ -87,6 +99,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    justify-self: end;
   }
 
   .time {

@@ -38,6 +38,12 @@ class CatalogState {
 
   propagation = $state.raw<SatelliteLayerStatus | null>(null);
 
+  /** The search box. */
+  query = $state('');
+  searchOpen = $state(false);
+  /** Set when a selection should also swing the camera round (search, links). */
+  flyRequest = $state(-1);
+
   get ready(): boolean {
     return this.phase === 'ready' && this.catalog !== null;
   }
@@ -46,8 +52,9 @@ class CatalogState {
     return this.catalog?.count ?? 0;
   }
 
-  select(index: number): void {
+  select(index: number, fly = false): void {
     this.selected = index;
+    if (fly) this.flyRequest = index;
   }
 
   clearSelection(): void {
