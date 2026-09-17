@@ -99,8 +99,8 @@
     <h1>Atmospheric Perspective: how it was built</h1>
     <p class="lede">A continuous account of building a real-time globe of everything in Earth orbit — what we made, how each piece works, what we chose and what we chose against, and what we measured. One part per component. Written as we go.</p>
     <div class="telemetry" aria-label="Journal state">
-      <div><span>PARTS </span><b>3</b> <span>· LAST UPDATED </span><b>12 Sep 2026</b></div>
-      <div><span>COMMITS COVERED </span><b>7a3e84d · f16d9b8 · a0ba44a · 2749616 · 05b5893</b></div>
+      <div><span>PARTS </span><b>4</b> <span>· LAST UPDATED </span><b>17 Sep 2026</b></div>
+      <div><span>COMMITS COVERED </span><b>7a3e84d · f16d9b8 · a0ba44a · 2749616 · 05b5893 · 0c85e24</b></div>
       <div><span>AUTHORS </span><b>Jack Barnett (direction) · Claude (build)</b></div>
     </div>
   </header>
@@ -130,6 +130,13 @@
       <li><a href="#p3-decisions">3.4 Decisions and alternatives</a></li>
       <li><a href="#p3-measurements">3.5 Measurements</a></li>
       <li><a href="#p3-next">3.6 What this enables next</a></li>
+      <li><a href="#part-4">Part 4 — Finding Things</a></li>
+      <li><a href="#p4-context">4.1 Context</a></li>
+      <li><a href="#p4-built">4.2 What was built</a></li>
+      <li><a href="#p4-how">4.3 How it works</a></li>
+      <li><a href="#p4-decisions">4.4 Decisions and alternatives</a></li>
+      <li><a href="#p4-measurements">4.5 Measurements</a></li>
+      <li><a href="#p4-next">4.6 What this enables next</a></li>
       <li><a href="#references">References</a></li>
       <li><a href="#revisions">Revision log</a></li>
     </ol>
@@ -744,6 +751,140 @@
       <p>And nothing on the page assumes it is running on localhost. It reads a manifest and an immutable file with the cache headers object storage sends; the next time the project changes shape, it can be a URL.</p>
     </section>
 
+    <section class="part" id="part-4">
+      <div class="part-head">
+        <div class="part-num"><small>Part</small>4</div>
+        <h2>Finding Things</h2>
+      </div>
+      <p class="part-meta">12 September 2026 · commit 0c85e24 · web/src/lib/orbits/{constellations,searchCatalog}.ts, web/src/lib/globe/{satellites,Globe}.ts, web/src/lib/state, web/src/ui/{SearchBox,GroupsPanel}.svelte</p>
+
+      <h3 id="p4-context"><span class="n">4.1</span>Context</h3>
+      <p>Part 3 ended with nineteen thousand dots moving correctly and a promise: the catalogue is in memory, indexed and cheap to walk, so everything that follows is interface. This part cashed the first of those promises. A globe of every object in orbit is impressive for about a minute; after that a visitor wants to find the one they came for — the station, the telescope, the constellation that has been in the news — and to see it against the rest. Jack's direction was to add search and constellations first and then to think about what else a visitor might do; this part is the first half of that sentence.</p>
+      <p>Two constraints shaped it. Nothing new was to be fetched, computed by the pipeline, or added as a dependency: the columns already parsed on the main thread had to be enough. And the result had to be shareable, because the address bar is the cheapest possible interface for "look at this".</p>
+
+      <h3 id="p4-built"><span class="n">4.2</span>What was built</h3>
+      <p><strong>Rules from the data, not from memory.</strong> Before writing a constellation rule we counted name prefixes and owner codes in the live snapshot. That is how China's Guowang turned up as <span class="mono">HULIANWANG</span> (191 objects) and Geely's fleet as <span class="mono">GEESAT</span> (63), and why the <span class="mono">IRIDIUM</span> and <span class="mono">FENGYUN</span> rules match payloads only — otherwise the Iridium 33 and Fengyun-1C debris clouds would have been folded into the fleets they came from. The result is a table of 43 rules in six categories: broadband megaconstellations, communications and IoT, navigation, Earth observation and weather, stations and recent launches, debris clouds. A rule is either a pattern on the catalogue name or a reference to one of the pipeline's groups. 16,544 of the 19,246 objects fall into a rule; the rest are one-off payloads, rocket bodies and unknowns, and the count beside each rule in the panel is its audit.</p>
+      <p><strong>Search.</strong> A box in the top bar, focused by <span class="mono">/</span> from anywhere on the page. Each keystroke scans every name; results are ranked and capped at forty; ↑↓ Enter Esc do what they should; the empty box offers examples. Because CelesTrak's names are not the ones people use, an alias table maps "Hubble" to <span class="mono">HST</span>, "Tiangong" to the three <span class="mono">CSS</span> modules, and a handful of others — the first search for Hubble had returned nothing, which is how the table came to exist.</p>
+      <p><strong>Groups.</strong> A panel beside Layers: the six categories as rows with operator and count; the fourteen largest owners by SATCAT code with their names spelled out; chips for payload, rocket body, debris and unknown. Picking a group and an owner combine. A picked set is described in place — objects, and how many launched in the last thirty days; types; regimes; median perigee and apogee; the five most populated inclination bins in half-degree steps; first and latest launch dates; top owners — which is how a visitor learns that Starlink is 11,129 objects in four shells at 53°, 43°, 97.5° and 70°, or that GPS is forty satellites between 19,913 and 20,467 km flown since 1997.</p>
+      <p><strong>Two ways to recede.</strong> Dim, the default, keeps the rest of the catalogue on screen at ten percent alpha and seventy percent size, so a group reads against its context; Hide removes it, so the group can be studied alone and the status bar's count becomes the group's. Hovering and clicking ignore dimmed objects.</p>
+      <p><strong>Fly-to and links.</strong> Choosing an object from search, from a link, or with the card's Locate button swings the camera round to it over 900 ms; the card also shows the object's group as a chip that picks it out. The address bar follows the selection and the pick — <span class="mono">?sat=25544&amp;group=stations</span> — and a link opens the site on that object, flying to it once the catalogue has loaded.</p>
+
+      <h3 id="p4-how"><span class="n">4.3</span>How it works</h3>
+      <p><strong>One integer per object.</strong> When a snapshot loads, every object is tested against the rules in order and given the index of the first that matches, or −1: an <span class="mono">Int16</span> per object, computed once. From then on a pick is two byte-per-object masks — membership, and the existing visibility mask — recomputed in about a millisecond whenever a setting changes, and the GPU does the rest (Figure 4.1).</p>
+
+      <figure>
+        <svg viewBox="0 0 980 300" role="img" aria-label="Flow: at load, assignGroups turns names and pipeline groups into one group index per object. When the visitor picks a group or owner, membershipMask produces one byte per object. In Dim mode that mask becomes the aEmphasis vertex attribute and the shader draws non-members at 10 percent alpha and 70 percent size; in Hide mode it is ANDed into the visibility mask and non-members are moved off-screen. The same masks gate hover and click picking. The summary block is computed from the member indices. The address bar is written on change and read on load." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="ee" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+          </defs>
+
+          <text x="20" y="26" font-weight="700" font-size="13">once per snapshot</text>
+          <rect x="20" y="40" width="220" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="60" font-weight="700">assignGroups</text>
+          <text x="30" y="78">43 rules · first match wins</text>
+          <text x="30" y="94">→ Int16 group[i]  ·  ownerCounts</text>
+
+          <text x="290" y="26" font-weight="700" font-size="13">on every change of pick / filter / types (~1 ms)</text>
+          <rect x="290" y="40" width="200" height="70" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="60" font-weight="700">membershipMask</text>
+          <text x="300" y="78">group[i] == picked  and/or</text>
+          <text x="300" y="94">OWNER[i] == picked owner</text>
+          <line x1="240" y1="75" x2="288" y2="75" stroke="currentColor" stroke-width="1.4" marker-end="url(#e)"/>
+
+          <rect x="290" y="130" width="200" height="54" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="150" font-weight="700">visibilityMask</text>
+          <text x="300" y="168">active / debris clouds × types</text>
+
+          <rect x="560" y="40" width="190" height="70" fill="none" style="stroke:var(--accent)" stroke-width="1.4"/>
+          <text x="570" y="60" font-weight="700" style="fill:var(--accent)">Dim (default)</text>
+          <text x="570" y="78">members → aEmphasis = 1</text>
+          <text x="570" y="94">others → alpha 10%, size 70%</text>
+          <line x1="490" y1="66" x2="558" y2="66" style="stroke:var(--accent)" stroke-width="1.4" marker-end="url(#ee)"/>
+
+          <rect x="560" y="130" width="190" height="54" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="570" y="150" font-weight="700">Hide</text>
+          <text x="570" y="168">visibility &amp;= members → off-screen</text>
+          <line x1="490" y1="90" x2="558" y2="150" stroke="currentColor" stroke-width="1.4" marker-end="url(#e)"/>
+          <line x1="490" y1="157" x2="558" y2="157" stroke="currentColor" stroke-width="1.4" marker-end="url(#e)"/>
+
+          <rect x="800" y="40" width="160" height="144" fill="none" style="stroke:var(--accent)" stroke-width="1.4"/>
+          <text x="810" y="60" font-weight="700" style="fill:var(--accent)">GPU, every frame</text>
+          <text x="810" y="80">two byte attributes per point</text>
+          <text x="810" y="96">read in the vertex shader;</text>
+          <text x="810" y="112">nothing else changes</text>
+          <text x="810" y="140">hover / click skip</text>
+          <text x="810" y="156">dimmed and hidden points</text>
+          <line x1="750" y1="75" x2="798" y2="75" style="stroke:var(--accent)" stroke-width="1.4" marker-end="url(#ee)"/>
+          <line x1="750" y1="157" x2="798" y2="157" stroke="currentColor" stroke-width="1.4" marker-end="url(#e)"/>
+
+          <rect x="290" y="214" width="460" height="60" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="300" y="234" font-weight="700">summariseObjects(member indices)</text>
+          <text x="300" y="252">count · launched in 30 d · types · regimes · median perigee/apogee · inclination bins (0.5°) · launch span · owners</text>
+          <text x="300" y="268" style="fill:var(--muted)">one pass over the members; Starlink's 11,129 take ~3 ms</text>
+          <line x1="390" y1="110" x2="390" y2="212" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 4" marker-end="url(#e)"/>
+
+          <text x="20" y="150" font-weight="700" font-size="13">the address bar</text>
+          <text x="20" y="168">?sat=48274&amp;group=starlink</text>
+          <text x="20" y="186">written on change, read on load;</text>
+          <text x="20" y="204">a satellite in the link also</text>
+          <text x="20" y="222">triggers the 900 ms fly-to</text>
+        </svg>
+        <figcaption><b>Figure 4.1</b> One integer per object decides membership; two bytes per object carry it to the GPU. A pick costs about a millisecond and touches nothing in the worker.</figcaption>
+      </figure>
+
+      <p><strong>Search.</strong> The query is upper-cased, whitespace-collapsed and passed through the alias table. Every object's name is tested once; a numeric query is compared against the catalogue number first. Each hit gets a rank — exact number, name starts with, designator starts with, name contains, number starts with — and multi-word queries require every word. The first forty are taken bucket by bucket in catalogue order, which is launch order, so "STARLINK" lists the oldest Starlinks rather than a random forty, and only those forty are sorted by name for display. The total is reported alongside so the footer can say "first 40 of 11,129". The whole thing is a linear scan: under two milliseconds for nineteen thousand names, which is why there is no index.</p>
+      <p><strong>Dimming as an attribute.</strong> The shader from Part 3 gained one byte per point, <span class="mono">aEmphasis</span>, and one uniform that says whether a pick is active. Non-members are drawn at ten percent alpha and seventy percent size by the vertex shader; nothing is re-uploaded but that one byte array, and the per-frame cost is zero. Hide instead ANDs the membership into the visibility mask, and hidden points are moved outside clip space as before. Picking reads both masks, so a dot you can barely see cannot be hovered.</p>
+      <p><strong>The flight.</strong> A flight stores the camera's starting direction and the target's index. Every frame it re-reads the target's current position — the same extrapolation the shader draws — eases a blend from 0 to 1 over 900 ms, interpolates between the two unit directions, and places the camera along the result at its original distance, looking at the Earth's centre. Because the direction is re-read each frame the camera lands on a moving satellite, not where it was when the flight began. A drag cancels it; a request that arrives before the first positions waits for them instead of giving up, which is what a link opened cold needs.</p>
+      <p><strong>The address bar.</strong> Selection and pick are written with <span class="mono">replaceState</span>, so the back button leaves the site rather than stepping through satellites; on load the parameters are applied once the catalogue is ready. Links carry catalogue numbers, which are stable across snapshots, and group identifiers, which are ours.</p>
+
+      <h3 id="p4-decisions"><span class="n">4.4</span>Decisions and alternatives considered</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Decision</th><th>Why</th><th>Alternative not taken</th></tr></thead>
+          <tbody>
+            <tr><td>Rules by name pattern, curated, first match wins</td><td>Names are how CelesTrak labels fleets; a 43-row table is auditable and the counts are visible in the panel.</td><td>Group by international designator prefix (one launch = one group — wrong for constellations) or by owner alone (United States = 12,621).</td></tr>
+            <tr><td>Constellation rules apply to payloads only</td><td>Keeps Iridium 33 and Fengyun-1C debris out of the fleets; debris clouds come from the pipeline's groups.</td><td>Match everything and special-case "DEB".</td></tr>
+            <tr><td>Linear scan per keystroke, no index</td><td>Under 2 ms for 19k names; an index would be more code for nothing.</td><td>A trigram or prefix index.</td></tr>
+            <tr><td>Rank buckets, capped before sorting</td><td>Sorting 11k Starlink hits with a locale-aware compare cost ~300 ms; taking forty by bucket costs nothing.</td><td>Sort everything, then slice.</td></tr>
+            <tr><td>Alias table for common names</td><td>"Hubble" and "Tiangong" returned nothing; the catalogue says HST and CSS.</td><td>Ship a full nickname dataset.</td></tr>
+            <tr><td>Dim by default, Hide as an option</td><td>Context first; isolation on request.</td><td>Hide only.</td></tr>
+            <tr><td>Emphasis as a vertex attribute</td><td>One byte per object; the shader does the dimming; zero CPU per frame.</td><td>Rewrite the colour buffer on each pick.</td></tr>
+            <tr><td>Picking ignores dimmed objects</td><td>Clicking a dot at ten percent alpha would be confusing.</td><td>Pick anything visible.</td></tr>
+            <tr><td>Group and owner combine as AND</td><td>Cheap, occasionally useful, never surprising.</td><td>Radio buttons across both lists.</td></tr>
+            <tr><td>Fly-to keeps the camera's distance</td><td>The visitor chose the zoom; the flight only changes where they look.</td><td>Zoom to a fixed altitude above the object.</td></tr>
+            <tr><td>Fly from search, links and Locate — not from a click</td><td>A click already has the object under the pointer; moving the camera then would disorient.</td><td>Fly on every selection.</td></tr>
+            <tr><td><span class="mono">replaceState</span>, not <span class="mono">pushState</span></td><td>Selection changes are not navigation.</td><td>A history entry per selection.</td></tr>
+            <tr><td>Panels are mutually exclusive</td><td>Both dock at the top right; one at a time keeps the globe visible.</td><td>Stack them.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="p4-measurements"><span class="n">4.5</span>Measurements</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Quantity</th><th>Value</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td>Rules · objects grouped</td><td class="num">43 · 16,544 of 19,246</td><td>Snapshot 20260912T1417Z</td></tr>
+            <tr><td>Largest groups</td><td class="num">Starlink 11,129 · OneWeb 651 · Kuiper 391 · Qianfan 238 · Guowang 204</td><td>Starlink: 189 launched in the previous 30 days</td></tr>
+            <tr><td>Navigation</td><td class="num">GPS 40 · Galileo 32 · GLONASS 29 · BeiDou 56</td><td>GPS at 19,913–20,467 km</td></tr>
+            <tr><td>Debris clouds</td><td class="num">Fengyun-1C 1,969 · Cosmos 2251 585 · Iridium 33 109</td><td>From the pipeline's groups</td></tr>
+            <tr><td>Search, one keystroke</td><td class="num">&lt; 2 ms</td><td>Linear scan of 19,246 names</td></tr>
+            <tr><td>Sorting 11k hits by name (rejected)</td><td class="num">~300 ms</td><td>Locale-aware compare; the reason for bucket capping</td></tr>
+            <tr><td>A pick (two masks)</td><td class="num">~1 ms</td><td>Recomputed on any change of pick, filter or types</td></tr>
+            <tr><td>Summary of Starlink</td><td class="num">~3 ms</td><td>One pass over 11,129 members</td></tr>
+            <tr><td>Fly-to</td><td class="num">900 ms</td><td>Ease-in-out; distance kept</td></tr>
+            <tr><td>Bundle</td><td class="num">690 KB (184 KB gzipped)</td><td>+6 KB gzipped over Part 3</td></tr>
+            <tr><td>New code</td><td class="num">4 files · 0 dependencies</td><td>Type check clean</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The verification was done in the browser against the live snapshot: links for the ISS, Hubble and GPS; alias search for Tiangong finding the three Chinese station modules; selection from results; the flight landing on Tianhe over the Caucasus; Starlink picked out with its four shells in the summary; GPS in Hide mode with forty shown. One incidental find: the app shell could be scrolled sideways by a programmatic focus of the search box, which is why the shell is now <span class="mono">overflow: clip</span>.</p>
+
+      <h3 id="p4-next"><span class="n">4.6</span>What this enables next</h3>
+      <p>Two things fell out of this part that later parts lean on. The emphasis channel — one byte per object that says "draw this normally, fade the rest" — is a general way to answer any question of the form "which of these?" on the globe, and the observer tools built next use it for a question about the sky rather than the catalogue. And the address bar now holds a complete description of a view, so anything the site can show can be sent to someone. The membership masks and the summary are also the seed of a catalogue explorer: the panel's inclination bins are a histogram waiting for an axis.</p>
+    </section>
+
     <section id="references">
       <h2>References</h2>
       <ul class="sources">
@@ -771,6 +912,7 @@
           <tbody>
             <tr><td class="num">2026-09-11</td><td>Journal begun. Part 1, The Globe, written covering the framework build (commit 7a3e84d) and the review revisions (commit f16d9b8) as one account.</td></tr>
             <tr><td class="num">2026-09-12</td><td>Part 2, The Orbit Pipeline, added (commit a0ba44a). Part 3, The Satellite Layer, added, covering the build and the review round as one account (commits 2749616, 05b5893). Part 1: postscript on the Milky Way's removal; the pending frame-rate measurement filled in. References extended for the propagators and the OMM standard.</td></tr>
+            <tr><td class="num">2026-09-17</td><td>Part 4, Finding Things, added (commit 0c85e24): search, the 43 constellation and fleet rules, owners and types, dim-or-hide, fly-to and shareable links.</td></tr>
           </tbody>
         </table>
       </div>
