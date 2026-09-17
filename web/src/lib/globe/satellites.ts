@@ -183,6 +183,9 @@ export class SatelliteLayer {
   private readonly vel: Float32Array;
   private readonly visible: Uint8Array;
   private readonly emphasis: Uint8Array;
+  /** Members of the picked-out group (null = no pick) and objects above the observer's horizon (null = no observer). */
+  private groupEmphasis: Uint8Array | null = null;
+  private horizonEmphasis: Uint8Array | null = null;
   private dimming = false;
   private readonly posAttr: BufferAttribute;
   private readonly velAttr: BufferAttribute;
@@ -192,6 +195,8 @@ export class SatelliteLayer {
 
   private epochSimMs = NaN;
   private hasFrame = false;
+  /** Increments each time new positions land; observers of the layer use it to know when to rescan. */
+  private frameSeq = 0;
   private shown = 0;
   private selected = -1;
   private hovered = -1;
@@ -293,6 +298,7 @@ export class SatelliteLayer {
     this.posAttr.needsUpdate = true;
     this.velAttr.needsUpdate = true;
     this.epochSimMs = frame.simMs;
+    this.frameSeq++;
     if (!this.hasFrame) {
       this.hasFrame = true;
       this.points.geometry.setDrawRange(0, this.count);
@@ -330,11 +336,47 @@ export class SatelliteLayer {
 
   /** Pick out a set of objects: members draw normally, the rest recede. `null` clears it. */
   setEmphasisMask(mask: Uint8Array | null): void {
-    if (mask) this.emphasis.set(mask);
-    else this.emphasis.fill(1);
+    this.groupEmphasis = mask ? Uint8Array.from(mask) : null;
+    this.rebuildEmphasis();
+  }
+
+  /** Objects above an observer's horizon draw normally, the rest recede. `null` clears it. Combines with the group pick. */
+  setHorizonMask(mask: Uint8Array | null): void {
+    this.horizonEmphasis = mask ? Uint8Array.from(mask) : null;
+    this.rebuildEmphasis();
+  }
+
+  private rebuildEmphasis(): void {
+    const g = this.groupEmphasis;
+    const h = this.horizonEmphasis;
+    const e = this.emphasis;
+    if (!g && !h) e.fill(1);
+    else if (g && h) for (let i = 0; i < e.length; i++) e[i] = g[i] & h[i];
+    else e.set((g ?? h)!);
     this.emphAttr.needsUpdate = true;
-    this.dimming = mask !== null;
+    this.dimming = !!(g || h);
     this.uniforms.uDimming.value = this.dimming ? 1 : 0;
+  }
+
+  // ---------------------------------------------------------------- read access for scans
+
+  /** Scene-frame positions (km, ×3) as of `frameSimMs` — the raw tick, before extrapolation. */
+  get framePositions(): Float32Array {
+    return this.pos;
+  }
+
+  get frameSimMs(): number {
+    return this.epochSimMs;
+  }
+
+  /** Bumped whenever new positions arrive. */
+  get frameSequence(): number {
+    return this.frameSeq;
+  }
+
+  /** The current visibility mask (1 = drawn). Read only. */
+  get visibleMask(): Uint8Array {
+    return this.visible;
   }
 
   /** Extrapolated position of object `i` in the world (scene) frame — for the camera to aim at. */

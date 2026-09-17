@@ -11,23 +11,27 @@
  * Buffers are transferred, not copied; the main thread hands them back ('recycle') once
  * it has copied them, so steady state allocates nothing.
  *
- * Messages in:  init | propagate | orbitPath | recycle
- * Messages out: ready | frame | orbitPath | error
+ * Messages in:  init | propagate | orbitPath | passes | recycle
+ * Messages out: ready | frame | orbitPath | passes | error
  */
 
 import { json2satrec, sgp4, type SatRec } from 'satellite.js';
+import type { ObserverGeodetic, Vec3 } from '../astro/topocentric';
 import type { OmmColumns } from './loadOrbitSnapshot';
+import { predictPasses, type Pass } from './predictPasses';
 
 export type WorkerRequest =
   | { type: 'init'; count: number; omm: OmmColumns }
   | { type: 'propagate'; seq: number; simMs: number }
   | { type: 'orbitPath'; requestId: number; index: number; startMs: number; periodMs: number; samples: number }
+  | { type: 'passes'; requestId: number; indices: number[]; observer: ObserverGeodetic; startMs: number; endMs: number; minElevationDeg: number }
   | { type: 'recycle'; pos: ArrayBuffer; vel: ArrayBuffer };
 
 export type WorkerResponse =
   | { type: 'ready'; count: number; initMs: number; initErrors: number }
   | { type: 'frame'; seq: number; simMs: number; pos: ArrayBuffer; vel: ArrayBuffer; computeMs: number; errors: number }
   | { type: 'orbitPath'; requestId: number; index: number; startMs: number; periodMs: number; points: ArrayBuffer }
+  | { type: 'passes'; requestId: number; passes: Pass[]; computeMs: number; evaluations: number }
   | { type: 'error'; message: string };
 
 const MS_PER_DAY = 86_400_000;
@@ -124,6 +128,30 @@ function orbitPath(requestId: number, index: number, startMs: number, periodMs: 
   post({ type: 'orbitPath', requestId, index, startMs, periodMs, points: out.buffer }, [out.buffer]);
 }
 
+/**
+ * Passes of the given objects over an observer within a time window. Each object is
+ * propagated on demand through `predictPasses`; results come back flat, sorted by rise time.
+ */
+function passes(requestId: number, indices: number[], observer: ObserverGeodetic, startMs: number, endMs: number, minElevationDeg: number): void {
+  const t0 = performance.now();
+  let evaluations = 0;
+  const out: Pass[] = [];
+  for (const index of indices) {
+    const s = satrecs[index];
+    if (!s || s.error !== 0) continue;
+    const eph = (ms: number): Vec3 | null => {
+      evaluations++;
+      const jd = ms / MS_PER_DAY + UNIX_EPOCH_JD;
+      const r = sgp4(s, (jd - s.jdsatepoch) * MIN_PER_DAY);
+      return r === null ? null : [r.position.x, r.position.y, r.position.z];
+    };
+    const periodMin = (2 * Math.PI) / s.no;
+    out.push(...predictPasses(index, eph, periodMin, observer, startMs, endMs, { minElevationDeg }));
+  }
+  out.sort((a, b) => a.riseMs - b.riseMs);
+  post({ type: 'passes', requestId, passes: out, computeMs: performance.now() - t0, evaluations });
+}
+
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const m = e.data;
   try {
@@ -136,6 +164,9 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
         break;
       case 'orbitPath':
         orbitPath(m.requestId, m.index, m.startMs, m.periodMs, m.samples);
+        break;
+      case 'passes':
+        passes(m.requestId, m.indices, m.observer, m.startMs, m.endMs, m.minElevationDeg);
         break;
       case 'recycle':
         if (m.pos.byteLength === count * 12 && pool.length < 4) pool.push({ pos: m.pos, vel: m.vel });

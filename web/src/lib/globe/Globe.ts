@@ -11,7 +11,8 @@
  *         ├─ Earth mesh (day/night shader)
  *         ├─ Clouds shell (translucent, drifts slowly)
  *         ├─ Atmosphere shell (back-face, additive)
- *         └─ Graticule
+ *         ├─ Graticule
+ *         └─ Observer pin (turns with the Earth)
  *
  *      └─ satelliteLayer  (attached once the orbit snapshot has loaded — ECI, so never under earthGroup)
  *         ├─ Points: one vertex per catalogued object, extrapolated in the vertex shader
@@ -26,11 +27,14 @@
  * map from Tycho-2 could not be made to look right at 1:1.)
  */
 
-import { Group, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
+import { Group, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ecefToGeodetic, eciToEcef, eciToScene, sceneEarthFixedToLatLon, sceneToEci, WGS84_A_KM, WGS84_B_KM } from '../astro/frames';
 import { gmst, julianDate } from '../astro/time';
 import { sunState, type SunState } from '../astro/sun';
+import { directionElevationDeg, observerEcef, observerInertial, type ObserverGeodetic } from '../astro/topocentric';
+import { scanOverhead, type OverheadScan } from '../orbits/scanOverhead';
+import { ObserverMarker } from './observerMarker';
 import { Atmosphere } from './atmosphere';
 import { Clouds, cloudOffset, loadCloudTexture } from './clouds';
 import { Earth, loadEarthTextures, type TextureTier } from './earth';
@@ -53,6 +57,12 @@ export interface SelectedReadout {
   inShadow: boolean;
 }
 
+/** The observer's sky this frame: the scan of what is up, plus the Sun's altitude there. */
+export interface ObserverStatus {
+  scan: OverheadScan | null;
+  sunElevationDeg: number;
+}
+
 export interface GlobeStatus {
   fps: number;
   simTimeMs: number;
@@ -65,6 +75,7 @@ export interface GlobeStatus {
   textureTier: TextureTier;
   satellites: SatelliteLayerStatus | null;
   selected: SelectedReadout | null;
+  observer: ObserverStatus | null;
 }
 
 export interface GlobeOptions {
@@ -80,6 +91,10 @@ export interface GlobeOptions {
 
 const Y_AXIS = new Vector3(0, 1, 0);
 const STATUS_INTERVAL_MS = 200;
+const _inv = new Matrix4();
+const _origin = new Vector3();
+const _dir = new Vector3();
+const _hit = new Vector3();
 
 export class Globe {
   readonly renderer: WebGLRenderer;
@@ -100,6 +115,15 @@ export class Globe {
   private stars?: StarField;
   private sun = new SunSprite();
   private satellites: SatelliteLayer | null = null;
+
+  // The observer: where they stand, the pin that shows it, and the latest scan of their sky.
+  private observer: ObserverGeodetic | null = null;
+  private readonly observerPin = new ObserverMarker();
+  private observerMinElevationDeg = 10;
+  private observerHighlight = true;
+  private observerScan: OverheadScan | null = null;
+  private observerScanSeq = -1;
+  private observerScanLayer: SatelliteLayer | null = null;
 
   private frame: FrameMode = 'eci';
   private worldRotation = 0;
@@ -155,7 +179,7 @@ export class Globe {
     this.controls.addEventListener('start', () => (this.flight = null));
 
     this.earthGroup.scale.set(1, WGS84_B_KM / WGS84_A_KM, 1);
-    this.earthGroup.add(this.atmosphere.mesh, this.graticule.root);
+    this.earthGroup.add(this.atmosphere.mesh, this.graticule.root, this.observerPin.points);
     this.world.add(this.earthGroup);
     this.scene.add(this.world);
 
@@ -228,6 +252,7 @@ export class Globe {
     this.graticule.dispose();
     this.stars?.dispose();
     this.sun.dispose();
+    this.observerPin.dispose();
     this.satellites?.dispose();
     this.renderer.dispose();
   }
@@ -243,6 +268,7 @@ export class Globe {
     this.skyCamera.updateProjectionMatrix();
     this.stars?.setPixelRatio(this.renderer.getPixelRatio());
     this.satellites?.setPixelRatio(this.renderer.getPixelRatio());
+    this.observerPin.setPixelRatio(this.renderer.getPixelRatio());
   }
 
   // ---------------------------------------------------------------- satellites
@@ -274,9 +300,17 @@ export class Globe {
 
   private updateFlight(now: number, simMs: number): void {
     const f = this.flight;
-    const layer = this.satellites;
-    if (!f || !layer) return;
-    if (!layer.worldPosition(f.index, simMs, this.flyTarget)) return; // no positions yet; keep waiting
+    if (!f) return;
+    if (f.index < 0) {
+      // Flying to the observer's pin rather than a satellite.
+      if (!this.observer) return void (this.flight = null);
+      this.earthGroup.updateMatrixWorld();
+      this.observerPin.worldPosition(this.flyTarget);
+    } else {
+      const layer = this.satellites;
+      if (!layer) return;
+      if (!layer.worldPosition(f.index, simMs, this.flyTarget)) return; // no positions yet; keep waiting
+    }
     if (f.startedAt < 0) {
       f.startedAt = now;
       f.startDir.copy(this.camera.position).normalize();
@@ -301,6 +335,91 @@ export class Globe {
     const ndcX = ((clientX - rect.left) / w) * 2 - 1;
     const ndcY = -(((clientY - rect.top) / h) * 2 - 1);
     return layer.pick(ndcX, ndcY, this.camera, w, h, this.opts.timeSource(), radiusPx);
+  }
+
+  // ---------------------------------------------------------------- observer
+
+  /** Where the visitor is standing, or null for nobody. Redraws the pin and restarts the sky scan. */
+  setObserver(o: ObserverGeodetic | null): void {
+    this.observer = o ? { ...o } : null;
+    if (o) this.observerPin.setLocation(o.latDeg, o.lonDeg, o.heightKm);
+    else this.observerPin.clear();
+    this.observerScan = null;
+    this.observerScanSeq = -1;
+    if (!o) this.satellites?.setHorizonMask(null);
+  }
+
+  /** Elevation above which an object counts as "well up"; also what the scan reports as aboveMin. */
+  setObserverMinElevation(deg: number): void {
+    this.observerMinElevationDeg = deg;
+    this.observerScanSeq = -1;
+  }
+
+  /** Dim everything below the observer's horizon. */
+  setObserverHighlight(on: boolean): void {
+    this.observerHighlight = on;
+    if (!on) this.satellites?.setHorizonMask(null);
+    this.observerScanSeq = -1;
+  }
+
+  /** The filter mask changed: what is "up" may have changed too. */
+  invalidateObserverScan(): void {
+    this.observerScanSeq = -1;
+  }
+
+  /** Fly the camera to look down on the observer's location. */
+  flyToObserver(durationMs = 900): void {
+    if (!this.observer) return;
+    this.flight = { index: -1, startDir: this.camera.position.clone().normalize(), startedAt: -1, durationMs };
+  }
+
+  /** Rescan the observer's sky whenever the layer has new positions (or something about the scan changed). */
+  private updateObserverScan(): void {
+    const layer = this.satellites;
+    const o = this.observer;
+    if (!o || !layer || !layer.status(0).hasFrame) return;
+    if (layer === this.observerScanLayer && layer.frameSequence === this.observerScanSeq) return;
+    this.observerScanLayer = layer;
+    this.observerScanSeq = layer.frameSequence;
+    const scan = scanOverhead(layer.framePositions, layer.count, layer.visibleMask, o, layer.frameSimMs, this.observerMinElevationDeg);
+    this.observerScan = scan;
+    if (this.observerHighlight) layer.setHorizonMask(scan.mask);
+  }
+
+  private observerStatus(simMs: number, sun: SunState): ObserverStatus | null {
+    const o = this.observer;
+    if (!o) return null;
+    const frame = observerInertial(observerEcef(o), gmst(julianDate(simMs)));
+    return { scan: this.observerScan, sunElevationDeg: directionElevationDeg(frame, sun.dir) };
+  }
+
+  /**
+   * Geodetic latitude / longitude of the ground under a pointer position (CSS px within the
+   * canvas), or null when the pointer misses the Earth.
+   */
+  pickGround(clientX: number, clientY: number): { latDeg: number; lonDeg: number } | null {
+    const canvas = this.renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    const ndcX = ((clientX - rect.left) / (rect.width || 1)) * 2 - 1;
+    const ndcY = -(((clientY - rect.top) / (rect.height || 1)) * 2 - 1);
+    // A ray in world space, taken into the Earth group's local frame — where the Earth is a
+    // sphere of radius a, the polar flattening being the group's scale.
+    this.earthGroup.updateMatrixWorld();
+    _inv.copy(this.earthGroup.matrixWorld).invert();
+    _origin.copy(this.camera.position).applyMatrix4(_inv);
+    _dir.set(ndcX, ndcY, 0.5).unproject(this.camera).applyMatrix4(_inv).sub(_origin);
+    // |origin + t·dir| = a, smallest positive t.
+    const a2 = _dir.dot(_dir);
+    const b = 2 * _origin.dot(_dir);
+    const c = _origin.dot(_origin) - WGS84_A_KM * WGS84_A_KM;
+    const disc = b * b - 4 * a2 * c;
+    if (disc < 0) return null;
+    const t = (-b - Math.sqrt(disc)) / (2 * a2);
+    if (t <= 0) return null;
+    _hit.copy(_dir).multiplyScalar(t).add(_origin);
+    // Local (x, y, z) → ECEF (x, −z, y·b/a): undo the scene swizzle and the group's polar scale.
+    const geo = ecefToGeodetic(_hit.x, -_hit.z, (_hit.y * WGS84_B_KM) / WGS84_A_KM);
+    return { latDeg: geo.latDeg, lonDeg: geo.lonDeg };
   }
 
   // ---------------------------------------------------------------- controls from UI
@@ -369,6 +488,7 @@ export class Globe {
     this.clouds?.update(this.sunScene, this.camera.position, drift);
     this.atmosphere.update(this.sunScene, this.camera.position);
     this.satellites?.update(simMs, rate, this.sunScene);
+    this.updateObserverScan();
 
     // Render: sky first (rotation-only camera), then the world on a fresh depth buffer.
     this.renderer.clear();
@@ -400,6 +520,7 @@ export class Globe {
         textureTier: this.textureTier,
         satellites: this.satellites?.status(simMs) ?? null,
         selected: this.selectedReadout(simMs, theta, sun),
+        observer: this.observerStatus(simMs, sun),
       });
     }
   };

@@ -1,16 +1,33 @@
 <script lang="ts">
   import { clock } from '../lib/state/clock.svelte';
   import { settings } from '../lib/state/settings.svelte';
+  import { observer } from '../lib/state/observer.svelte';
   import { formatRate, formatUtc } from '../lib/format';
   import SearchBox from './SearchBox.svelte';
 
+  // One panel at a time on the right-hand side.
   function toggleLayers() {
     settings.layersOpen = !settings.layersOpen;
-    if (settings.layersOpen) settings.groupsOpen = false;
+    if (settings.layersOpen) {
+      settings.groupsOpen = false;
+      observer.open = false;
+    }
   }
   function toggleGroups() {
     settings.groupsOpen = !settings.groupsOpen;
-    if (settings.groupsOpen) settings.layersOpen = false;
+    if (settings.groupsOpen) {
+      settings.layersOpen = false;
+      observer.open = false;
+    }
+  }
+  function toggleObserver() {
+    observer.open = !observer.open;
+    if (observer.open) {
+      settings.layersOpen = false;
+      settings.groupsOpen = false;
+    } else {
+      observer.picking = false;
+    }
   }
 
   const utc = $derived(formatUtc(clock.simTime));
@@ -57,6 +74,9 @@
       </button>
     </div>
 
+    <button class="btn" class:is-active={observer.open} aria-expanded={observer.open} onclick={toggleObserver} title="What is over your head, and when the stations pass">
+      Above you
+    </button>
     <button class="btn" class:is-active={settings.groupsOpen || settings.hasPick} aria-expanded={settings.groupsOpen} onclick={toggleGroups}>
       Groups
     </button>

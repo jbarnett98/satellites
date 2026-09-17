@@ -4,10 +4,12 @@
   import TimeControls from './ui/TimeControls.svelte';
   import LayersPanel from './ui/LayersPanel.svelte';
   import GroupsPanel from './ui/GroupsPanel.svelte';
+  import ObserverPanel from './ui/ObserverPanel.svelte';
   import StatusBar from './ui/StatusBar.svelte';
   import ObjectCard from './ui/ObjectCard.svelte';
   import HoverLabel from './ui/HoverLabel.svelte';
   import { settings } from './lib/state/settings.svelte';
+  import { observer } from './lib/state/observer.svelte';
 </script>
 
 <main class="app">
@@ -29,6 +31,10 @@
   {:else if settings.groupsOpen}
     <div class="chrome layers">
       <GroupsPanel />
+    </div>
+  {:else if observer.open}
+    <div class="chrome layers">
+      <ObserverPanel />
     </div>
   {/if}
 

@@ -18,8 +18,18 @@
  * At most one request is in flight. A time jump or a rate change forces a fresh tick.
  */
 
+import type { ObserverGeodetic } from '../astro/topocentric';
 import type { OmmColumns } from './loadOrbitSnapshot';
+import type { Pass } from './predictPasses';
 import type { WorkerRequest, WorkerResponse } from './propagation.worker';
+
+export interface PassPrediction {
+  passes: Pass[];
+  /** Worker time, ms. */
+  computeMs: number;
+  /** SGP4 evaluations it took. */
+  evaluations: number;
+}
 
 export interface PropagationFrame {
   seq: number;
@@ -76,6 +86,8 @@ export class PropagationEngine {
 
   private orbitPathRequests = new Map<number, (points: Float32Array) => void>();
   private orbitPathSeq = 0;
+  private passRequests = new Map<number, (result: PassPrediction) => void>();
+  private passSeq = 0;
 
   constructor(count: number, omm: OmmColumns) {
     this.count = count;
@@ -98,6 +110,12 @@ export class PropagationEngine {
             const cb = this.orbitPathRequests.get(m.requestId);
             this.orbitPathRequests.delete(m.requestId);
             cb?.(new Float32Array(m.points));
+            break;
+          }
+          case 'passes': {
+            const cb = this.passRequests.get(m.requestId);
+            this.passRequests.delete(m.requestId);
+            cb?.({ passes: m.passes, computeMs: m.computeMs, evaluations: m.evaluations });
             break;
           }
           case 'error':
@@ -196,9 +214,19 @@ export class PropagationEngine {
     });
   }
 
+  /** Passes of `indices` over `observer` between `startMs` and `endMs`, sorted by rise time. */
+  requestPasses(indices: number[], observer: ObserverGeodetic, startMs: number, endMs: number, minElevationDeg: number): Promise<PassPrediction> {
+    return new Promise((resolve) => {
+      const requestId = ++this.passSeq;
+      this.passRequests.set(requestId, resolve);
+      this.send({ type: 'passes', requestId, indices, observer: { ...observer }, startMs, endMs, minElevationDeg });
+    });
+  }
+
   dispose(): void {
     this.disposed = true;
     this.worker.terminate();
     this.orbitPathRequests.clear();
+    this.passRequests.clear();
   }
 }

@@ -135,7 +135,7 @@
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr);
     width: 340px;
-    max-height: calc(100vh - 300px); /* stops above the status bar */
+    max-height: calc(100vh - 370px); /* clears the status bar (282 px + margins) */
     padding: 10px 0 0;
     background: var(--panel-strong);
   }

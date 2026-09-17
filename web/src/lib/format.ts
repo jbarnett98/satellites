@@ -87,3 +87,70 @@ export function formatEpoch(iso: string): string {
   const ms = Date.parse(iso.endsWith('Z') ? iso : `${iso}Z`);
   return Number.isNaN(ms) ? iso : formatUtc(ms).replace(/:\d\d UTC$/, ' UTC');
 }
+
+// ---- observer times: the browser's zone, or UTC ----
+
+export type ClockZone = 'local' | 'utc';
+
+/** "20:04" in the chosen zone. */
+export function formatClock(ms: number, zone: ClockZone): string {
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) return '—';
+  return zone === 'utc' ? `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}` : `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/** "20:04:41" in the chosen zone. */
+export function formatClockSeconds(ms: number, zone: ClockZone): string {
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) return '—';
+  return zone === 'utc'
+    ? `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}`
+    : `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+/** "Today" · "Tomorrow" · "Fri 19 Sep", relative to `nowMs`, in the chosen zone. */
+export function formatDay(ms: number, zone: ClockZone, nowMs: number): string {
+  const day = (t: number) => {
+    const d = new Date(t);
+    return zone === 'utc' ? Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) : new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  };
+  const diff = Math.round((day(ms) - day(nowMs)) / 86_400_000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  const d = new Date(ms);
+  const opts: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' };
+  if (zone === 'utc') opts.timeZone = 'UTC';
+  return d.toLocaleDateString('en-GB', opts);
+}
+
+/** Short zone name for the browser's local time, e.g. "BST", "GMT+1", "PDT". */
+export function localZoneName(ms = Date.now()): string {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZoneName: 'short' }).formatToParts(new Date(ms));
+  return parts.find((p) => p.type === 'timeZoneName')?.value ?? 'local';
+}
+
+/** "10.7 min" · "3 h 54 min" */
+export function formatDuration(ms: number): string {
+  const min = ms / 60_000;
+  if (min < 60) return `${min.toFixed(1)} min`;
+  const h = Math.floor(min / 60);
+  return `${h} h ${String(Math.round(min - h * 60)).padStart(2, '0')} min`;
+}
+
+/** "in 12 min" · "in 3 h 05 min" · "now" · "2 min ago" */
+export function formatUntil(ms: number, nowMs: number): string {
+  const s = (ms - nowMs) / 1000;
+  if (Math.abs(s) < 45) return 'now';
+  if (s < 0) return `${formatAgo(ms, nowMs)}`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `in ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `in ${h} h ${String(m - h * 60).padStart(2, '0')} min`;
+  return `in ${Math.round(h / 24)} d`;
+}
+
+/** "55.86° N, 4.25° W" */
+export function formatLatLon(latDeg: number, lonDeg: number): string {
+  return `${formatLat(latDeg)}, ${formatLon(lonDeg)}`;
+}

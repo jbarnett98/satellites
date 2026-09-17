@@ -7,8 +7,10 @@ the data; hosting costs ~nothing.
 Today: 19,247 tracked objects (every active satellite plus three debris clouds), propagated
 with SGP4 in a Web Worker and drawn as GPU points that the vertex shader carries between
 ticks. Hover names an object; click for its orbit and catalogue record; search by name or
-number (`/`); pick out any of 43 constellations, an owner, or an object type; links such as
-`?sat=25544&group=stations` open the site on that object.
+number (`/`); pick out any of 43 constellations, an owner, or an object type; say where you
+are (**Above you**) to see what is over your head, a sky chart, and tonight's passes of the
+stations and Hubble with naked-eye visibility; links such as `?sat=25544&group=stations` or
+`?obs=55.86,-4.25` open the site on that object or that sky.
 
 Project plan and working brief: `CLAUDE.md`. Stage briefs: `docs/briefs/`.
 

@@ -6,7 +6,9 @@
   import { TYPE_COLORS } from '../lib/globe/satellites';
   import { settings } from '../lib/state/settings.svelte';
   import { GROUPS } from '../lib/orbits/constellations';
-  import { formatAgeDays, formatEpoch, formatKm, formatLat, formatLon, formatPeriod } from '../lib/format';
+  import { formatAgeDays, formatClock, formatDay, formatDuration, formatEpoch, formatKm, formatLat, formatLon, formatPeriod } from '../lib/format';
+  import { observer } from '../lib/state/observer.svelte';
+  import { compassPoint } from '../lib/astro/topocentric';
 
   const item = $derived.by(() => {
     const cat = catalog.catalog;
@@ -48,6 +50,23 @@
 
   const live = $derived(catalog.selectedReadout?.index === item?.i ? catalog.selectedReadout : null);
   const epochAgeDays = $derived(item ? (clock.simTime - item.epochMs) / 86_400_000 : 0);
+
+  // From the observer's spot: where it is in the sky now, and its next passes.
+  const sky = $derived.by(() => {
+    const scan = observer.scan;
+    const i = item?.i ?? -1;
+    if (!scan || i < 0 || !observer.location) return null;
+    const e = scan.entries;
+    for (let k = 0; k < e.length; k += 4) if (e[k] === i) return { az: e[k + 1], el: e[k + 2], range: e[k + 3] };
+    return { az: 0, el: -1, range: 0 };
+  });
+  const nextPasses = $derived.by(() => {
+    const set = observer.passes;
+    const i = item?.i ?? -1;
+    if (!set || i < 0) return [];
+    const now = set.startMs;
+    return set.passes.filter((p) => p.index === i && p.setMs > now).slice(0, 3);
+  });
 </script>
 
 {#if item}
@@ -88,6 +107,27 @@
       <dd>{live ? (live.inShadow ? "in Earth's shadow" : 'sunlit') : '—'}</dd>
     </dl>
 
+    {#if observer.location && sky}
+      <div class="eyebrow section">From {observer.location.label}</div>
+      <dl class="readout">
+        <dt>In the sky</dt>
+        <dd>{sky.el > 0 ? `${sky.el.toFixed(0)}° up, ${compassPoint(sky.az)} · ${formatKm(sky.range)} away` : 'below the horizon'}</dd>
+        {#if nextPasses.length}
+          <dt>Next passes</dt>
+          <dd>
+            {#each nextPasses as p (p.riseMs)}
+              <div class="pass-line" class:vis={p.visibleFromMs !== null}>
+                {formatDay(p.riseMs, observer.timeZone, clock.simTime)} {formatClock(p.riseMs, observer.timeZone)} · {compassPoint(p.riseAzDeg)} → {p.maxElDeg.toFixed(0)}° {compassPoint(p.maxAzDeg)} → {compassPoint(p.setAzDeg)} · {formatDuration(p.setMs - p.riseMs)}{p.visibleFromMs !== null ? ' · visible' : ''}
+              </div>
+            {/each}
+          </dd>
+        {:else if observer.passes}
+          <dt>Next passes</dt>
+          <dd>none above {observer.passes.minElevationDeg}° in 24 h</dd>
+        {/if}
+      </dl>
+    {/if}
+
     <div class="eyebrow section">Orbit</div>
     <dl class="readout">
       <dt>Regime</dt>
@@ -123,6 +163,8 @@
 <style>
   .card {
     width: 330px;
+    max-height: calc(100vh - 220px); /* clears the time controls */
+    overflow-y: auto;
     padding: 10px 12px 12px;
     background: var(--panel-strong);
   }
@@ -218,5 +260,15 @@
 
   .warn {
     color: var(--warn);
+  }
+
+  .pass-line {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .pass-line.vis {
+    color: var(--accent);
   }
 </style>

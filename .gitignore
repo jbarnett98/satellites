@@ -19,3 +19,4 @@ pipeline/.venv/
 Thumbs.db
 .idea/
 .vscode/
+web/scratch/

@@ -4,7 +4,7 @@ This file is my standing brief. It is loaded into context every session in this 
 Read it before doing anything. If something here conflicts with what Jack says in chat,
 Jack wins — then update this file so it stays true.
 
-Last updated: 2026-09-12 (Stage 5 complete: search and groups — see §10).
+Last updated: 2026-09-17 (Stage 6 complete: observer tools "Above you" — see §10).
 
 Visual calibration notes (so I don't re-derive them): star size/alpha curves live in
 `stars.ts` (`magToSize`, `magToAlpha`). Cloud opacity 0.42 was Jack's "very subtle". Orbit
@@ -18,6 +18,13 @@ are white and the two must stay tellable apart (payload `#7fdbe8`, R/B `#f4b860`
 0.6–4× ("too small when I zoom in"); base sizes 3.4/3.4/2.5/3.0 px were "a good size at
 15,000 km". Jack's machine, measured: 240 fps with the layer, 4.8 MB in 158 ms, parse
 10 ms, worker init 62 ms, 6.9 ms per full-catalogue SGP4 tick.
+Observer (Stage 6): below-horizon dimming applies only while the Above-you panel is open;
+the pass watchlist is stations-group payloads minus objects with the ISS designator 1998-067
+(deployed cubesats) + Hubble + the selected object + a picked group ≤ 200; co-orbiting passes
+(rise/set within 90 s, peak within 3°) fold into one row named for the station; "visible" =
+sunlit satellite while the observer's Sun < −6°; times in the browser's zone with a UTC toggle;
+geolocation rounded to 0.01° and never written to the URL; the pass window (24 h) rolls at
++2 h and is frozen above 60×.
 
 ---
 
@@ -136,6 +143,19 @@ hot-swaps the layer (selection kept by NORAD). Worker emits scene-frame (x, z, �
 (PERIOD_MIN, SEMI_MAJOR_AXIS_KM, APOGEE_KM, PERIGEE_KM, REGIME, EPOCH_AGE_DAYS, FLAGS, GROUPS),
 7 SATCAT (OBJECT_TYPE, OPS_STATUS_CODE, OWNER, LAUNCH_DATE, LAUNCH_SITE, DECAY_DATE, RCS).
 
+**Observer side (Stage 6, verified):** `astro/topocentric.ts` (Three-free: geodetic→ECEF,
+east/north/up axes, rotation into ECI/scene by GMST, look angles, Sun elevation, shadow test,
+twilight) is shared by the globe and the worker. Each propagation tick the Globe runs
+`scanOverhead` over the layer's raw position buffer (1.1 ms / 19k objects) → above-horizon
+mask (→ `setHorizonMask`, ANDed with the group emphasis into `aEmphasis`) + entries sorted by
+elevation → status (5 Hz) → panel + `SkyChart` canvas. Passes: `PropagationEngine.requestPasses`
+→ worker `passes` message → `predictPasses` per object (coarse step = period/180 clamped
+20–120 s, bisection ×16 for rise/set, golden section ×24 for the peak, 8-s samples with
+sunlit/dark) → sorted `Pass[]`; 15 objects ≈ 59k SGP4 ≈ 40–80 ms. Ground picking =
+pointer ray vs the ellipsoid in earthGroup local space → `ecefToGeodetic`. Places: Natural
+Earth 1:10m populated places (7,342 rows, 325 KB, public domain) built by the pipeline,
+fetched on demand, nearest-place naming within 150 km.
+
 **Fetch discipline (implemented in `celestrak_client.py`, verified 2026-09-11):** gp.php sends no
 Last-Modified/ETag → purely temporal pacing: per dataset, no request < 58 min after the last
 attempt, no request < 1 h 50 after the last success (the hourly task then fetches every 2nd
@@ -158,24 +178,31 @@ atmospheric-perspective/            (folder is literally "Satellite Platform" on
   web/                              Svelte 5 + Vite 8 + TS 5.9 + Three r186
     public/textures/earth/          day-{2048,4096,8192}, night-{2048,8192}, clouds-{2048,4096} .webp
     public/data/sky/                stars-hyg.bin (Int16×4 per star, 934 KB) + stars-hyg.json (meta, names)
-    src/lib/astro/                  time.ts (JD, GMST), sun.ts, frames.ts (WGS84, ECI↔scene, ECI→ECEF→geodetic)
+    public/data/places/             places-ne10m.json (7,342 Natural Earth places, 325 KB; fetched on demand)
+    src/lib/astro/                  time.ts (JD, GMST), sun.ts, wgs84.ts (constants, Three-free), frames.ts (ECI↔scene,
+                                    ECI→ECEF→geodetic; re-exports wgs84), topocentric.ts (observer frame, look angles,
+                                    Sun elevation, shadow, twilight, compass, great circle — Three-free)
     src/lib/orbits/                 loadOrbitSnapshot.ts, SatelliteCatalog.ts (codes, masks, group index, owner counts),
-                                    propagation.worker.ts, PropagationEngine.ts, satcatCodes.ts,
+                                    propagation.worker.ts (+ passes), PropagationEngine.ts (+ requestPasses), satcatCodes.ts,
                                     constellations.ts (43 GROUPS rules, assignGroups, summariseObjects),
-                                    searchCatalog.ts (ranked scan + aliases) — plain data + worker, no Three/Svelte
-    src/lib/globe/                  Globe.ts (loop, scene graph, setSatellites/pickSatellite), earth.ts, clouds.ts,
-                                    atmosphere.ts, stars.ts, sun.ts, graticule.ts,
-                                    satellites.ts (SatelliteLayer: aEmphasis dimming, worldPosition), orbitPath.ts;
-                                    Globe.flyToSatellite — Three only, no Svelte
-    src/lib/state/                  clock / settings / status / catalog (.svelte.ts, runes classes)
+                                    searchCatalog.ts (ranked scan + aliases), predictPasses.ts (rise/peak/set/visibility),
+                                    scanOverhead.ts (above-horizon scan), passWatchlist.ts — plain data + worker, no Three/Svelte
+    src/lib/places/                 loadPlaces.ts (fetch once, search, nearest) — plain data
+    src/lib/globe/                  Globe.ts (loop, scene graph, setSatellites/pickSatellite, setObserver, pickGround,
+                                    flyToObserver, observer scan), earth.ts, clouds.ts, atmosphere.ts, stars.ts, sun.ts,
+                                    graticule.ts, satellites.ts (SatelliteLayer: aEmphasis = group ∧ horizon, worldPosition,
+                                    framePositions), orbitPath.ts, observerMarker.ts (the pin) — Three only, no Svelte
+    src/lib/state/                  clock / settings / status / catalog / observer (.svelte.ts, runes classes)
     src/ui/                         GlobeCanvas (the one Svelte↔Three bridge; loads satellites, pointer
-                                    picking, hot-swap poll, masks, URL ?sat=&group=), TopBar (+SearchBox, Groups),
-                                    TimeControls, LayersPanel, GroupsPanel, StatusBar, ObjectCard (Locate, group chip),
-                                    HoverLabel, SearchBox
+                                    picking, ground picking, hot-swap poll, masks, observer effects + pass scheduler,
+                                    URL ?sat=&group=&obs=), TopBar (+SearchBox, Above you, Groups, Layers),
+                                    TimeControls, LayersPanel, GroupsPanel, ObserverPanel (+SkyChart canvas), StatusBar,
+                                    ObjectCard (Locate, group chip, "From <place>" passes), HoverLabel, SearchBox
   pipeline/                         uv project (pyproject.toml, uv.lock, .venv ignored)
     ap_pipeline/paths.py            ROOT / RAW / WEB_PUBLIC and output folders
     ap_pipeline/textures/build_earth_textures_from_nasa.py
     ap_pipeline/sky/build_star_catalog_from_hyg.py
+    ap_pipeline/places/build_places_from_natural_earth.py   one-off; downloads the 4.7 MB GeoJSON if absent
     ap_pipeline/orbits/             celestrak_client.py (gates + state), validate_element_sets.py (sgp4),
                                     satcat.py, build_orbit_snapshot.py, run_orbit_update.py (hourly entry)
     scheduling/register_windows_task.ps1   register / -Status / -Remove the hourly task
@@ -191,9 +218,10 @@ atmospheric-perspective/            (folder is literally "Satellite Platform" on
   data/logs/orbits.log
   .github/workflows/                added when we move the pipeline to Actions
 ```
-Dependency direction is strict: `ui → state → globe → astro`, with `orbits` beside `astro`
-at the bottom (globe and state import it; it imports nothing of ours). satellite.js is
-imported only in the worker. Satellites live under the `world` group (ECI), never under
+Dependency direction is strict: `ui → state → globe → astro`, with `orbits` and `places`
+beside `astro` at the bottom (globe and state import them; `orbits` may import `astro`'s
+Three-free modules — time, sun, wgs84, topocentric — never frames.ts, which imports Three).
+satellite.js is imported only in the worker. Satellites live under the `world` group (ECI), never under
 `earthGroup`. `vite.config.ts` sets `worker.format = 'es'`.
 
 **Naming rule (Jack, 2026-09-11):** file and module names must say what they do —
@@ -229,6 +257,13 @@ files (`stars-hyg.bin`, `clouds-4096.webp`) and future workers/routes.
 - **Bash heredocs with large Python/TS bodies sometimes fail to parse in this harness**
   ("unexpected EOF while looking for matching quote"); write the script with the Write tool
   and run the file instead.
+- **Running `web/src` modules in Node** (benchmarks, algorithm tests against the real snapshot):
+  Node 24 strips TS types natively but needs explicit extensions, so use a resolve hook that
+  appends `.ts` (`scratchpad/ts-loader.mjs` + `register.mjs`; ten lines — recreate if the
+  scratchpad is gone) and run from `web/` so `satellite.js` resolves:
+  `node --import file:///<scratchpad>/register.mjs scratch/x.mjs`. `web/scratch/` is git-ignored
+  for such scripts. Node's type stripping rejects parameter properties (`constructor(private x)`)
+  — don't use them in `lib/`.
 - Dev server: `preview_start` with name `web` → http://localhost:5173. **The app stops this
   server when its Browser-pane tab closes** (happened 2026-09-11; Jack found localhost down).
   Before telling Jack to look at localhost, verify with `curl -s -o /dev/null -w "%{http_code}"
@@ -317,17 +352,24 @@ All three document types (plan, briefs, journal) use one visual family so they r
 | 2 | Globe polish: 8k textures, clouds, Sun, HYG stars, Milky Way, controls | 2026-09-11 | `docs/briefs/02-globe-polish.html` · https://claude.ai/code/artifact/5bda8a5d-9661-4d3d-9c9c-2ef8edb6196d | Part 1 — The Globe |
 | 3 | Orbit pipeline: CelesTrak fetch discipline, sgp4 validation, snapshot, archive, hourly schedule | 2026-09-11 | `docs/briefs/03-orbit-pipeline.html` · https://claude.ai/code/artifact/41f64269-6dc4-4b45-9839-fe02ce9e2b54 | Part 2 — The Orbit Pipeline |
 | 4 | Satellite layer: worker SGP4, GPU points, hover/select/orbit/card, filters, hot-swap | 2026-09-11 | `docs/briefs/04-satellite-layer.html` · https://claude.ai/code/artifact/65925fba-5555-4a1e-a97f-49754d13c95b | Part 3 — The Satellite Layer |
-| 5 | Search and groups: search box + aliases, 43 constellations/fleets, owners, type chips, dim/hide, fly-to, ?sat=&group= links | 2026-09-12 | `docs/briefs/05-search-and-groups.html` · https://claude.ai/code/artifact/b81b3441-6fbb-4263-85de-4e26dcc857ac | pending Jack's yes (would be Part 4 — Finding Things) |
+| 5 | Search and groups: search box + aliases, 43 constellations/fleets, owners, type chips, dim/hide, fly-to, ?sat=&group= links | 2026-09-12 | `docs/briefs/05-search-and-groups.html` · https://claude.ai/code/artifact/b81b3441-6fbb-4263-85de-4e26dcc857ac | Part 4 — Finding Things |
+| 6 | Observer tools "Above you": location (city / click / coords / geolocation), sky scan + dimming, sky chart, 24 h pass predictions with visibility, ?obs= links | 2026-09-17 | `docs/briefs/06-above-you.html` · https://claude.ai/artifact/38WiUwxc31ZoVnaoqvgwUa | pending Jack's yes (would be Part 5 — Above You) |
 
 Commits: Stage 1 `7a3e84d`, Stage 2 `f16d9b8`, journal `d097609`, Stage 3 `a0ba44a`, Stage 4
-`2749616`, Milky Way removal `05b5893`, journal 2+3 `2f96f9a`, Stage 5 (see git log). Jack said
+`2749616`, Milky Way removal `05b5893`, journal 2+3 `2f96f9a`, Stage 5 `0c85e24`, Stage 6 and
+journal Part 4 (see git log). Jack said
 "yes commit" at the end of Stage 1 → **commit at the end of every stage** (one commit per
 stage, message "Stage N: <name>"). Since 2026-09-12 (remote added at Jack's request) I also
 **push at the end of each stage** — I told him so and he didn't object; stop if he says so.
 
-Open with Jack after Stage 5: journal Part 4 approval; Space-Track — he has an account, needs the
-ODR before the public snapshot can carry Space-Track data; credentials go in git-ignored
-`pipeline/.env`, never chat. Stage 5 facts: CelesTrak names Hubble `HST` and Tiangong
+Open with Jack after Stage 6: journal Part 5 approval; he should try "Use my location" in
+Chrome (the test pane can't answer the permission prompt); Space-Track — he has an account,
+needs the ODR before the public snapshot can carry Space-Track data; credentials go in
+git-ignored `pipeline/.env`, never chat. Stage 6 facts: CelesTrak's `stations` group holds
+23 objects incl. debris, a stage and ISS-deployed cubesats (designator 1998-067xxx) — see the
+watchlist rules above; Progress MS-35 launched 2026-09-17 and was chasing the ISS on the
+first evening; the right-hand panels are `max-height: calc(100vh - 370px)` (the status bar is
+282 px tall) and the object card scrolls above the time controls. Stage 5 facts: CelesTrak names Hubble `HST` and Tiangong
 `CSS (TIANHE)` etc. — the alias table in `searchCatalog.ts` covers that; constellation rules
 are payload-only (IRIDIUM/FENGYUN would otherwise catch their debris); the app shell is
 `overflow: clip` because a programmatic focus once scrolled it sideways.
@@ -336,8 +378,10 @@ Journal: `docs/journal/atmospheric-perspective-journal.html` ·
 https://claude.ai/code/artifact/52b246d3-75b9-42f9-88e2-5dfd3fb9de1e (redeploy this same file
 path from this conversation, or pass this URL as `url` from another, so the link never changes).
 Parts so far: 1 — The Globe (2026-09-11), 2 — The Orbit Pipeline and 3 — The Satellite Layer
-(both 2026-09-12; Part 1 carries a postscript on the Milky Way's removal). Figure ids used:
-markers a/aa/b/bb (Part 1), c/cc (Part 2), d/dd (Part 3) — pick fresh letters for Part 4.
+(both 2026-09-12; Part 1 carries a postscript on the Milky Way's removal), 4 — Finding Things
+(2026-09-17). Figure ids used: markers a/aa/b/bb (Part 1), c/cc (Part 2), d/dd (Part 3),
+e/ee (Part 4) — pick fresh letters (f/ff) for Part 5. The publish tool may print a short alias
+(https://claude.ai/artifact/BDHAqHVD5dir2x2veUEKm7) — same artifact.
 
 ## 11. Data source quick reference
 

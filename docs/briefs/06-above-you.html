@@ -1,0 +1,372 @@
+<title>Stage 06 · Above You</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F4F6F9; --surface: #FFFFFF; --ink: #1A2230; --muted: #5B6677; --line: #D3DAE3;
+    --accent: #0B7580; --accent-soft: #DFEFF0; --amber: #B45A10; --amber-soft: #FBEEDD;
+    --green: #2F7D4F; --green-soft: #E3F2E8; --code-bg: #EAEFF4; --shadow: 0 1px 2px rgba(26,34,48,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+      --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+      --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E131A; --surface: #151C26; --ink: #E3E8EF; --muted: #97A3B4; --line: #263141;
+    --accent: #4FC6D0; --accent-soft: #113039; --amber: #E8984F; --amber-soft: #33210F;
+    --green: #6CCB8E; --green-soft: #12311F; --code-bg: #1A2330; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Source Serif 4", Georgia, serif; font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 96px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 48px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px 16px 64px; } nav.toc { position: static !important; } }
+  header.mast { grid-column: 1 / -1; border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+  .eyebrow { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 46px; line-height: 1.02; margin: 8px 0 12px; text-wrap: balance; }
+  .lede { font-size: 19px; max-width: 66ch; margin: 0 0 20px; }
+  .telemetry { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.7; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 24px; font-variant-numeric: tabular-nums; }
+  .telemetry span { color: var(--muted); } .telemetry b { font-weight: 500; color: var(--ink); }
+  nav.toc { position: sticky; top: 24px; align-self: start; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 600; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); }
+  nav.toc a:hover { color: var(--ink); border-left-color: var(--ink); }
+  nav.toc .toc-head { margin-bottom: 8px; }
+  article { max-width: 760px; min-width: 0; }
+  section { padding: 12px 0 28px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  section:last-of-type { border-bottom: 0; }
+  h2 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 30px; line-height: 1.1; margin: 8px 0 14px; text-wrap: balance; }
+  h3 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 20px; line-height: 1.2; margin: 26px 0 8px; text-wrap: balance; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; max-width: 70ch; } li { margin-bottom: 5px; }
+  strong { font-weight: 600; }
+  code, .mono { font-family: "IBM Plex Mono", Consolas, monospace; font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+  pre { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--line); padding: 12px 14px; margin: 0 0 14px; overflow-x: auto; white-space: pre; }
+  pre code { background: none; padding: 0; font-size: inherit; } .annot { color: var(--muted); }
+  .note, .warn, .done { margin: 18px 0 20px; padding: 12px 16px 6px; max-width: 70ch; border-top: 2px solid var(--accent); background: var(--accent-soft); }
+  .warn { border-top-color: var(--amber); background: var(--amber-soft); }
+  .done { border-top-color: var(--green); background: var(--green-soft); }
+  .note .eyebrow { color: var(--accent); margin-bottom: 4px; } .warn .eyebrow { color: var(--amber); margin-bottom: 4px; } .done .eyebrow { color: var(--green); margin-bottom: 4px; }
+  .note p:last-child, .warn p:last-child, .done p:last-child { margin-bottom: 8px; }
+  .tablewrap { overflow-x: auto; margin: 6px 0 18px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.45; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 8px; border-radius: 3px; white-space: nowrap; }
+  .pill.live { background: var(--green-soft); color: var(--green); }
+  .pill.partial { background: var(--accent-soft); color: var(--accent); }
+  .pill.todo { background: var(--code-bg); color: var(--muted); }
+  .pill.risk { background: var(--amber-soft); color: var(--amber); }
+  .opt { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+  .opt:last-of-type { border-bottom: 1px solid var(--line); }
+  .opt .o-key { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 26px; line-height: 1; color: var(--accent); }
+  .opt h4 { font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-size: 19px; margin: 0 0 6px; }
+  .opt p { margin-bottom: 6px; }
+  .opt .tradeoff { font-size: 15px; color: var(--muted); }
+  figure { margin: 18px 0 22px; }
+  figure svg { max-width: 100%; height: auto; display: block; color: var(--ink); background: var(--surface); border: 1px solid var(--line); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; max-width: 70ch; font-family: "Barlow Semi Condensed", "Arial Narrow", sans-serif; font-weight: 600; }
+  .tree { font-size: 12.5px; }
+  .tree .d { color: var(--accent); font-weight: 500; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">Atmospheric Perspective · Stage brief 06 · 17 Sep 2026</div>
+    <h1>Above you: an observer on the ground, the sky over their head, and tonight's passes</h1>
+    <p class="lede">A visitor can now say where they are — type a city, click the globe, or let the browser tell us — and the site answers the question people actually bring to a satellite map: what is over my head right now, and when will I see something? The pin sits on the globe and everything below that person's horizon fades; a sky chart shows the hemisphere above them, zenith in the middle; the stations, Hubble and whatever they have selected get a 24-hour pass list with rise, peak, set, and whether the pass is visible to the naked eye. All of it is computed in the browser from the snapshot the page already holds — one millisecond per sky scan, forty-odd milliseconds for a day of predictions.</p>
+    <div class="telemetry" aria-label="Stage numbers">
+      <div><span>SKY SCAN </span><b>1.1 ms</b> <span>· 19,249 objects, once per tick</span></div>
+      <div><span>PASSES </span><b>~59,000 SGP4</b> <span>· 15 objects, 24 h, 40–80 ms</span></div>
+      <div><span>ISS ALONE </span><b>3,634 evaluations</b> <span>· 14 ms</span></div>
+      <div><span>PLACES </span><b>7,342</b> <span>· 325 KB, loaded on demand</span></div>
+      <div><span>LINKS </span><b>?obs=55.86,-4.25</b></div>
+      <div><span>NEW CODE </span><b>10 files</b> <span>· bundle +11 KB gzipped</span></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow toc-head">Contents</div>
+    <ol>
+      <li><a href="#where">Where the project is</a></li>
+      <li><a href="#completed">What we just completed</a></li>
+      <li><a href="#structure">Under the hood: structure</a></li>
+      <li><a href="#mechanism">Under the hood: from a location to a pass</a></li>
+      <li><a href="#decisions">Decisions taken</a></li>
+      <li><a href="#next">Immediate next avenues</a></li>
+      <li><a href="#risks">Open questions and risks</a></li>
+      <li><a href="#run">Running it</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section id="where">
+      <h2>Where the project is</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Component</th><th>State</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Globe · sky · time</td><td><span class="pill live">Live</span></td><td>Unchanged, plus an observer pin under the Earth group and a ground-picking ray for setting a location by click.</td></tr>
+            <tr><td>Orbit pipeline</td><td><span class="pill live">Running</span></td><td>Unattended since 11 Sep; snapshot <span class="mono">20260917T1717Z</span> at the time of writing, 19,249 objects. A new one-off builder produces the place list from Natural Earth.</td></tr>
+            <tr><td>Satellite layer</td><td><span class="pill live">Live</span></td><td>As Stage 5, plus a second emphasis channel (above the observer's horizon) that combines with the group pick, and read access to the raw tick positions for scans.</td></tr>
+            <tr><td>Search · groups · links</td><td><span class="pill live">Live</span></td><td>Unchanged; links gain <span class="mono">obs=lat,lon</span>.</td></tr>
+            <tr><td>Observer: location</td><td><span class="pill live">New</span></td><td>Type a city (7,342 places, offline), click the globe, enter coordinates, or use browser geolocation. Remembered between visits. Named after the nearest listed place.</td></tr>
+            <tr><td>Observer: sky now</td><td><span class="pill live">New</span></td><td>Count above the horizon and above 10°; day / twilight / night; a sky chart of every object up, clickable; the six highest; everything below the horizon dimmed on the globe.</td></tr>
+            <tr><td>Observer: passes</td><td><span class="pill live">New</span></td><td>24-hour predictions for the stations and their visiting vehicles, Hubble, the selected object, and any picked group up to 200 objects. Rise / peak / set with compass directions, duration, naked-eye visibility window, local-or-UTC times, the track drawn on the chart. The object card shows its own next three.</td></tr>
+            <tr><td>Full catalogue (Space-Track)</td><td><span class="pill risk">Open</span></td><td>Unchanged: your account exists; the ODR gates public display.</td></tr>
+            <tr><td>Hosting</td><td><span class="pill todo">Local only</span></td><td>Unchanged. Note for later: browser geolocation needs HTTPS, which Cloudflare Pages gives for free.</td></tr>
+            <tr><td>Repository</td><td><span class="pill live">Public</span></td><td>github.com/jbarnett98/satellites — 11 commits after this stage, pushed.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="completed">
+      <h2>What we just completed</h2>
+      <ul>
+        <li><strong>The observer's frame, without Three.js.</strong> A location becomes an Earth-fixed position and three axes — east, north, up — and, at any instant, those are rotated into the inertial frame by the sidereal angle. A satellite's direction is then the difference vector projected on the axes: azimuth from north through east, elevation from the horizon. The module is plain arithmetic on number triples so the propagation worker uses it too; the WGS84 constants moved into a small file of their own for the same reason.</li>
+        <li><strong>The sky scan.</strong> Every time the worker delivers new positions (once a second at real time), the globe walks the position buffer once with the observer already rotated into the renderer's frame: three dot products and one <span class="mono">asin</span> per object, 1.1 ms for the catalogue. Out comes a byte mask of what is above the horizon — which becomes the emphasis attribute, so the visible cone brightens and the rest of the sky fades — and a list of (index, azimuth, elevation, range) sorted by elevation for the panel and the chart. Hidden objects (filtered types, debris clouds off) are skipped so the counts match what is drawn.</li>
+        <li><strong>Pass prediction in the worker.</strong> For each watched object, elevation is sampled along the orbit at a coarse step (a 180th of the period: 30 s for the ISS, capped at 2 min), each rise refined by bisection to well under a second, the peak by golden-section search, the set by bisection again; passes that never reach the minimum elevation are dropped. Each pass is then sampled every 8 s for azimuth, elevation, whether the satellite is sunlit (the same cylindrical-shadow test the shader uses) and whether the observer's sky is dark (Sun more than 6° below their horizon — the end of civil twilight). Sunlit over a dark sky is "visible", and the first and last such moments are the visibility window. Fifteen objects for 24 hours cost about 59,000 SGP4 evaluations and 40–80 ms; the ISS alone is 3,634 evaluations in 14 ms.</li>
+        <li><strong>The watchlist.</strong> CelesTrak's <span class="mono">stations</span> group turned out to hold 23 objects: the ISS and Tiangong modules, seven docked vehicles, a rocket stage, two pieces of debris shed from the station, and six cubesats it recently deployed. The list keeps payloads, drops anything carrying the ISS's own designator <span class="mono">1998-067</span> other than the station itself (that is how deployed cubesats are catalogued), adds Hubble, the selected object, and a picked group when it is 200 objects or fewer — GPS, Galileo, the ISS group — and says so in the panel when it is not. Objects flying together rise and set together, so the ISS and its six docked vehicles fold into one row, "ISS (ZARYA) +6".</li>
+        <li><strong>Setting the location.</strong> Four ways: a typeahead over 7,342 Natural Earth places (public domain; a pipeline builder turns the GeoJSON into a 325 KB row list, fetched the first time the panel needs it); a click on the globe, which casts the pointer ray at the ellipsoid and converts the hit to geodetic latitude and longitude; two coordinate boxes; and browser geolocation, rounded to a hundredth of a degree (about a kilometre) so it is a sky, not an address. A picked point is named after the nearest listed place — "Glasgow" within 25 km, "near Lisbon" beyond. The location persists in <span class="mono">localStorage</span> and in the link, except that a geolocated position never goes into a link you might share.</li>
+        <li><strong>The sky chart.</strong> A 296-px canvas redrawn five times a second: horizon at the rim, zenith at the centre, 30° and 60° rings, the minimum-elevation ring in the accent colour, north up and east on the <em>left</em> — the way a planisphere reads when you hold it overhead. Every object above the horizon is a dot in its type colour; the geostationary belt appears as an arc at the latitude's characteristic elevation. Hovering a list row rings its dot; clicking a dot selects the object. The selected object's next pass (or a pass clicked in the list) is drawn as a track, grey where unlit or in daylight, accent where you could see it, with rise and set times at the ends.</li>
+        <li><strong>Times.</strong> Passes are listed in the browser's zone (labelled, e.g. BST) with a UTC toggle; "Today 20:59", "Tomorrow 06:12"; "in 1 h 06 min"; a pass in progress says "Now · until 21:10 · sets in 8 min". The window is 24 hours from the simulation clock and rolls forward once the clock is two hours into it; while the clock is running faster than 60× it does not roll at all, because each roll is a worker pause the propagation ticks would feel.</li>
+        <li><strong>Verified, in the browser, against the real snapshot:</strong> Glasgow named from a link's coordinates; 1,045 objects above its horizon at civil twilight; the ISS pass tonight at 20:59 BST rising west, peaking 40° in the south, setting east-south-east, visible until it enters the Earth's shadow at 21:05 — the same numbers the Node run gave before any UI existed; Hubble and Tianhe correctly never clearing 10° from 56° N, and Hubble correctly clearing 36° from Sydney; Progress MS-35, launched this afternoon and still 140 km below the station, as its own row; a click off the Portuguese coast becoming "near Lisbon" with the passes recomputed; Sydney at 04:58 local reported as nautical twilight; the pin and the dimmed cone correct in both view frames; the window rolling at 3,600×.</li>
+      </ul>
+      <div class="done">
+        <div class="eyebrow">Working principles honoured</div>
+        <p>Nothing was fetched from a live service by the browser. The one new dataset is public domain, built by the pipeline, and static. Pass prediction — the classic reason satellite sites run a server — is a few dozen milliseconds in the same Web Worker that already propagates the catalogue.</p>
+      </div>
+    </section>
+
+    <section id="structure">
+      <h2>Under the hood: structure</h2>
+<pre class="tree"><code><span class="d">pipeline/ap_pipeline/places/</span>
+└─ build_places_from_natural_earth.py   <span class="annot">downloads the 1:10m populated places once (4.7 MB GeoJSON) → 7,342 rows [name, country, lat, lon, population]</span>
+<span class="d">web/public/data/places/</span>
+└─ places-ne10m.json           <span class="annot">325 KB, most populous first, fetched the first time the panel needs it</span>
+<span class="d">web/src/lib/astro/</span>
+├─ wgs84.ts                    <span class="annot">the ellipsoid and μ as constants, no Three.js — so the worker can import them</span>
+├─ frames.ts                   <span class="annot">re-exports wgs84; unchanged otherwise</span>
+└─ topocentric.ts              <span class="annot">geodetic → ECEF; observer axes; rotation into ECI / the scene frame; look angles; elevation of a direction (the Sun);</span>
+                               <span class="annot">Earth-shadow test; twilight thresholds; compass points; great-circle distance</span>
+<span class="d">web/src/lib/orbits/</span>
+├─ predictPasses.ts            <span class="annot">coarse scan → bisection → golden section → 8-s samples with sunlit / dark; takes any ephemeris function</span>
+├─ scanOverhead.ts             <span class="annot">one pass over the tick buffer → above-horizon mask + entries sorted by elevation</span>
+├─ passWatchlist.ts            <span class="annot">stations payloads minus 1998-067 cubesats + Hubble + selected + a small picked group</span>
+├─ propagation.worker.ts       <span class="annot">+ passes message: per object, an ephemeris closure over its satrec → predictPasses; results sorted by rise</span>
+└─ PropagationEngine.ts        <span class="annot">+ requestPasses(indices, observer, start, end, minEl) → Promise</span>
+<span class="d">web/src/lib/places/</span>
+└─ loadPlaces.ts               <span class="annot">fetch once; accent-folded prefix / substring search; nearest place within 150 km</span>
+<span class="d">web/src/lib/globe/</span>
+├─ observerMarker.ts           <span class="annot">the pin: one screen-sized point (ring + dot) under earthGroup, lifted 12 km, y unscaled for the polar flattening</span>
+├─ satellites.ts               <span class="annot">+ setHorizonMask (ANDed with the group mask into aEmphasis); framePositions / frameSimMs / frameSequence / visibleMask</span>
+└─ Globe.ts                    <span class="annot">+ setObserver, min elevation, highlight; the scan on each new tick; pickGround (ray vs ellipsoid); flyToObserver; observer status</span>
+<span class="d">web/src/lib/state/</span>
+└─ observer.svelte.ts          <span class="annot">location (persisted), open / picking / minElevation / highlight / timeZone, scan, passes, window start, setAt, locate</span>
+<span class="d">web/src/ui/</span>
+├─ ObserverPanel.svelte        <span class="annot">location picker (places, geolocate, pick, coordinates); sky now; chart; highest six; pass list with merging; controls</span>
+├─ SkyChart.svelte             <span class="annot">the canvas: rings, compass, dots, hover / selection rings, the pass track</span>
+├─ GlobeCanvas.svelte          <span class="annot">+ picking-mode click → ground; observer effects; the pass scheduler (watchlist × location × window → worker); ?obs=</span>
+├─ ObjectCard.svelte           <span class="annot">+ "From &lt;place&gt;": where it is in the sky now, its next three passes</span>
+├─ TopBar.svelte · App.svelte  <span class="annot">+ the Above you button and panel slot (one right-hand panel at a time)</span>
+└─ format.ts (lib)             <span class="annot">+ clock / day / duration / until formatters in local or UTC; zone name</span></code></pre>
+      <p>The dependency rule bends in one sanctioned place: <span class="mono">orbits</span> now imports from <span class="mono">astro</span> (time, sun, topocentric) — both are pure maths at the bottom of the graph, and the worker needs the Sun and the sidereal angle to judge visibility. Nothing in <span class="mono">astro</span> or <span class="mono">orbits</span> imports Three.js or Svelte; <span class="mono">places</span> sits beside them.</p>
+    </section>
+
+    <section id="mechanism">
+      <h2>Under the hood: from a location to a pass</h2>
+      <p>Two loops run once the observer is set. The fast one answers "what is up now" from positions the layer already has; the slow one asks the worker to look a day ahead for a short list of objects. Neither touches the frame loop's cost: the scan is a millisecond per tick, and the prediction is a message.</p>
+      <figure>
+        <svg viewBox="0 0 980 420" role="img" aria-label="Two flows. Fast loop: the observer's location is resolved to Earth-fixed axes once; each propagation tick the axes are rotated into the scene frame by GMST and the position buffer is scanned with three dot products per object; the result is a mask that becomes the aEmphasis attribute, and a sorted list that feeds the panel and the sky chart at 5 Hz. Slow loop: the watchlist (stations, Hubble, selected, small group), the location and a 24-hour window are sent to the worker; predictPasses runs a coarse scan, bisection and golden-section per object and samples each pass for sunlight and darkness; the sorted passes come back to the panel (merged rows), the object card and the chart's track. The window rolls after two hours, not above 60 times speed." xmlns="http://www.w3.org/2000/svg" font-family="Barlow Semi Condensed, Arial Narrow, sans-serif" font-size="12">
+          <defs>
+            <marker id="e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+            <marker id="ee" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+          </defs>
+
+          <!-- location -->
+          <rect x="20" y="40" width="190" height="90" fill="none" style="stroke:var(--accent)" stroke-width="1.4"/>
+          <text x="30" y="60" font-weight="700" style="fill:var(--accent)">the observer</text>
+          <text x="30" y="78">city · click · coordinates ·</text>
+          <text x="30" y="94">geolocation (rounded to 0.01°)</text>
+          <text x="30" y="112">→ lat, lon, height · pin on the globe</text>
+
+          <text x="20" y="26" font-weight="700" font-size="13">once per location</text>
+          <rect x="20" y="150" width="190" height="60" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="30" y="170" font-weight="700">observerEcef</text>
+          <text x="30" y="188">position + east / north / up</text>
+          <text x="30" y="202">axes, Earth-fixed</text>
+          <line x1="115" y1="130" x2="115" y2="148" stroke="currentColor" stroke-width="1.2" marker-end="url(#e)"/>
+
+          <!-- fast loop -->
+          <text x="260" y="26" font-weight="700" font-size="13">fast loop · every propagation tick (1 Hz at real time)</text>
+          <rect x="260" y="40" width="210" height="88" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="270" y="60" font-weight="700">scanOverhead · 1.1 ms</text>
+          <text x="270" y="78">rotate observer into the scene</text>
+          <text x="270" y="94">frame by GMST; per object:</text>
+          <text x="270" y="110">3 dot products, one asin</text>
+          <line x1="210" y1="180" x2="240" y2="180" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="240" y1="180" x2="240" y2="84" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="240" y1="84" x2="258" y2="84" stroke="currentColor" stroke-width="1.2" marker-end="url(#e)"/>
+
+          <rect x="520" y="40" width="200" height="40" fill="none" style="stroke:var(--accent)" stroke-width="1.4"/>
+          <text x="530" y="57" font-weight="700" style="fill:var(--accent)">mask → aEmphasis</text>
+          <text x="530" y="72">AND the group pick; the rest fade</text>
+          <line x1="470" y1="60" x2="518" y2="60" style="stroke:var(--accent)" stroke-width="1.4" marker-end="url(#ee)"/>
+
+          <rect x="520" y="90" width="200" height="40" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="530" y="107" font-weight="700">entries, highest first</text>
+          <text x="530" y="122">index · az · el · range</text>
+          <line x1="470" y1="110" x2="518" y2="110" stroke="currentColor" stroke-width="1.2" marker-end="url(#e)"/>
+
+          <rect x="770" y="40" width="190" height="90" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="780" y="60" font-weight="700">status · 5 Hz</text>
+          <text x="780" y="78">counts · condition (Sun's</text>
+          <text x="780" y="94">altitude) · highest six ·</text>
+          <text x="780" y="110">sky chart canvas · card</text>
+          <line x1="720" y1="110" x2="768" y2="90" stroke="currentColor" stroke-width="1.2" marker-end="url(#e)"/>
+
+          <!-- slow loop -->
+          <text x="260" y="176" font-weight="700" font-size="13">slow loop · on location, watchlist or window change</text>
+          <rect x="260" y="190" width="210" height="88" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="270" y="210" font-weight="700">passWatchlist</text>
+          <text x="270" y="228">stations (payloads, minus the</text>
+          <text x="270" y="244">1998-067 cubesats) + Hubble +</text>
+          <text x="270" y="260">selected + a picked group ≤ 200</text>
+
+          <rect x="260" y="300" width="210" height="60" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="270" y="320" font-weight="700">the window</text>
+          <text x="270" y="338">24 h from the sim clock; rolls at</text>
+          <text x="270" y="354">+2 h; frozen above 60×</text>
+
+          <rect x="520" y="190" width="200" height="170" fill="none" style="stroke:var(--accent)" stroke-width="1.4"/>
+          <text x="530" y="210" font-weight="700" style="fill:var(--accent)">worker · predictPasses</text>
+          <text x="530" y="228">per object, an ephemeris closure</text>
+          <text x="530" y="244">coarse step = period / 180</text>
+          <text x="530" y="260">rise: bisection ×16</text>
+          <text x="530" y="276">peak: golden section ×24</text>
+          <text x="530" y="292">set: bisection ×16</text>
+          <text x="530" y="308">samples every 8 s: az, el,</text>
+          <text x="530" y="324">sunlit? (shadow cylinder),</text>
+          <text x="530" y="340">dark? (Sun &lt; −6° there)</text>
+          <text x="530" y="354" style="fill:var(--muted)">15 objects ≈ 59k SGP4 ≈ 40–80 ms</text>
+          <line x1="470" y1="234" x2="518" y2="234" style="stroke:var(--accent)" stroke-width="1.4" marker-end="url(#ee)"/>
+          <line x1="470" y1="330" x2="518" y2="300" stroke="currentColor" stroke-width="1.2" marker-end="url(#e)"/>
+          <line x1="115" y1="210" x2="115" y2="234" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="115" y1="234" x2="258" y2="234" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 4"/>
+
+          <rect x="770" y="190" width="190" height="170" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="780" y="210" font-weight="700">passes, sorted by rise</text>
+          <text x="780" y="228">panel rows — objects flying</text>
+          <text x="780" y="244">together fold into one</text>
+          <text x="780" y="260">("ISS (ZARYA) +6")</text>
+          <text x="780" y="284">card: the object's next three</text>
+          <text x="780" y="308">chart: the selected pass as</text>
+          <text x="780" y="324">a track, accent where visible</text>
+          <text x="780" y="348" style="fill:var(--muted)">local or UTC; "in 1 h 06 min"</text>
+          <line x1="720" y1="275" x2="768" y2="275" stroke="currentColor" stroke-width="1.2" marker-end="url(#e)"/>
+
+          <text x="20" y="395" style="fill:var(--muted)">Dashed: the same location feeds both loops. The worker is the one that already propagates the catalogue — a prediction request queues behind the current tick and delays the next by its cost.</text>
+        </svg>
+        <figcaption>The fast loop reads what the layer already has; the slow loop asks the worker a bounded question. Neither adds per-frame work on the main thread.</figcaption>
+      </figure>
+      <h3>The chart's projection, in one paragraph</h3>
+      <p>Elevation maps linearly to radius (90° at the centre, 0° at the rim), which spaces the 30° and 60° rings evenly and keeps the low sky — where passes begin and end — from being squashed. Azimuth is the angle from north, but mirrored: the chart is drawn as if you were lying on your back looking up, so east is on the left, as on a planisphere or a star map held overhead. That is the convention that lets a person turn from the screen to the sky without flipping anything in their head.</p>
+      <h3>Ground picking, in one paragraph</h3>
+      <p>The pointer's ray is taken from world space into the Earth group's local frame, where the planet is a sphere of the equatorial radius and the polar flattening is the group's scale. The ray-sphere intersection is solved in that frame; the hit point's scene swizzle is undone and its polar scale reapplied to give an Earth-fixed coordinate, which the existing WGS84 conversion turns into geodetic latitude and longitude. The same rotation the Earth mesh carries is what makes the pick land on the right city in both the inertial and the Earth-fixed views.</p>
+    </section>
+
+    <section id="decisions">
+      <h2>Decisions taken this stage</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Decision</th><th>Why</th><th>Alternative not taken</th></tr></thead>
+          <tbody>
+            <tr><td>A watchlist for passes, not the whole catalogue</td><td>Fifteen objects cost 40–80 ms; 19,000 would cost a minute. The list is what people ask about.</td><td>Predict everything with a geometric prefilter — a next avenue, not the first cut.</td></tr>
+            <tr><td>Prediction in the propagation worker</td><td>The satellite records are already there; a second worker would parse 19k element sets again for a job that takes 50 ms.</td><td>A dedicated prediction worker.</td></tr>
+            <tr><td>Coarse step = period ÷ 180, then refine</td><td>A LEO pass lasts minutes; 30-s sampling cannot skip one. Refinement makes rise and set sub-second for 32 extra evaluations.</td><td>Fixed 10-s sampling everywhere (6× the cost) or an analytic rise-set solver (wrong for perturbed orbits).</td></tr>
+            <tr><td>"Visible" = sunlit satellite over a dark sky, Sun &lt; −6°</td><td>The civil-twilight threshold is the standard one and needs no magnitude model.</td><td>A brightness estimate from radar cross-section — not available for most objects and poorly correlated anyway.</td></tr>
+            <tr><td>The sky scan on the main thread, from the tick buffer</td><td>1.1 ms once a second, on data the layer already holds; the worker would have to ship 230 KB of angles per tick instead.</td><td>Compute az/el in the worker.</td></tr>
+            <tr><td>Below-horizon dimming reuses the emphasis channel</td><td>One byte per object, ANDed with the group pick; the shader is unchanged.</td><td>A third attribute and a second dimming uniform.</td></tr>
+            <tr><td>Dimming applies only while the panel is open</td><td>A visitor who closes the panel should get their globe back, not wonder why it went dark.</td><td>A persistent setting.</td></tr>
+            <tr><td>Natural Earth places, built by the pipeline, loaded on demand</td><td>Public domain, 325 KB, offline; a city name is what people type. Loaded only when the panel opens.</td><td>A geocoding service (a live upstream from the browser — ruled out) or no names at all.</td></tr>
+            <tr><td>Geolocation rounded to 0.01°, never written to a link</td><td>A kilometre is plenty for the sky and is not an address; a shared link should not carry where you live.</td><td>Full precision; everything in the URL.</td></tr>
+            <tr><td>Stations: payloads only, minus the ISS's deployed cubesats</td><td>CelesTrak's group is broad; nobody means a shed camera or a 1U cubesat by "the station". The 1998-067 designator rule is how those are catalogued.</td><td>Hand-pick catalogue numbers (breaks when vehicles come and go).</td></tr>
+            <tr><td>Co-orbiting passes fold into one row</td><td>Seven identical ISS rows helped nobody. Same rise, set and peak within 90 s and 3° is the test; the station itself is the row's name.</td><td>Show every object's pass.</td></tr>
+            <tr><td>Times in the browser's zone, labelled, with UTC</td><td>The visitor is nearly always looking at their own sky. A zone-from-coordinates table is another dataset.</td><td>UTC only (the rest of the site) or a time-zone dataset now.</td></tr>
+            <tr><td>The window freezes above 60×</td><td>At 3,600× a 24-h window would roll every two seconds, each roll a worker pause the ticks would feel.</td><td>Roll regardless.</td></tr>
+            <tr><td>Chart as a canvas, not SVG elements</td><td>Up to ~1,500 dots five times a second; a canvas is one draw call, an SVG would diff 1,500 nodes.</td><td>SVG.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="next">
+      <h2>Immediate next avenues</h2>
+      <div class="opt">
+        <div class="o-key">A</div>
+        <div>
+          <h4>"What can I see tonight?" across the whole catalogue</h4>
+          <p>Prefilter by geometry (an orbit whose inclination band never reaches the observer's latitude cannot pass overhead) and by size (radar cross-section large or medium), which leaves a few hundred candidates; predict those; list tonight's visible passes by brightness proxy. About a second in the worker, once per night.</p>
+          <p class="tradeoff">Turns the feature from "the stations" into "everything worth going outside for"; medium effort.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">B</div>
+        <div>
+          <h4>Catalogue explorer: the data as charts</h4>
+          <p>Unchanged from the Stage 5 brief: altitude × inclination scatter linked to the globe, launches by year and owner, the shells as histograms. The sky chart is the first canvas in the app; the explorer would be the second.</p>
+          <p class="tradeoff">The first "data platform" feature; mostly charts and layout.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">C</div>
+        <div>
+          <h4>Look up: a view from the ground</h4>
+          <p>A second camera placed at the observer's pin, looking at the sky with the real stars behind and the satellites moving across them — the sky chart, but in 3D and in time. The scene already has everything; it is a camera and a horizon.</p>
+          <p class="tradeoff">Spectacular for the ISS pass tonight; a day of work.</p>
+        </div>
+      </div>
+      <div class="opt">
+        <div class="o-key">D</div>
+        <div>
+          <h4>Go public</h4>
+          <p>Cloudflare Pages + R2; links become sendable, and geolocation works because Pages is HTTPS. Unchanged from the Stage 4 brief.</p>
+          <p class="tradeoff">About a day; $0/month.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="risks">
+      <h2>Open questions and risks</h2>
+      <ul>
+        <li><strong>"Visible" is a lighting statement, not a brightness one.</strong> The ISS, Tiangong and Hubble are bright when sunlit; a docked Progress is faint; a GPS satellite at 20,000 km is beyond the naked eye even when the badge says visible. A magnitude model (standard magnitudes for the famous objects, RCS as a proxy for the rest) would make the badge honest for everything.</li>
+        <li><strong>Times are in the visitor's zone, not the observer's.</strong> Someone in London looking at Sydney's sky sees BST times, labelled as such. A zone-from-coordinates dataset is a few hundred kilobytes and would fix it.</li>
+        <li><strong>The model ignores refraction</strong> (about half a degree at the horizon) and uses a cylindrical shadow (no penumbra). Rise and set are a few seconds off; the shadow entry a few seconds soft. Fine for going outside, not for timing an occultation.</li>
+        <li><strong>Element sets age.</strong> Predictions 24 hours out from elements up to a day old are good to seconds for the ISS — until it reboosts, which it does every few weeks and which shifts the following day's passes by a minute or more until the next element set. The pipeline's two-hour cadence bounds that.</li>
+        <li><strong>Geolocation needs a secure context.</strong> Works on localhost; will work on Cloudflare Pages; would not on a plain-HTTP host. I could not exercise the permission prompt from the test pane — please try "Use my location" in Chrome.</li>
+        <li><strong>CelesTrak's stations group will keep changing.</strong> Vehicles dock and depart, cubesats get deployed; the payload-only and 1998-067 rules are the safeguards. A Tiangong cubesat would carry 2021-035 and slip through — a rule to add when it happens.</li>
+        <li><strong>The 200-object cap on group predictions</strong> is a guess at what stays under a tenth of a second. Starlink, OneWeb and the debris clouds are refused with a note; avenue A is the real answer.</li>
+        <li><strong>Panels on a 720-px-tall screen</strong> now stop above the status bar (all three: Layers, Groups, Above you) and the object card scrolls above the time controls. On your monitor nothing scrolls.</li>
+      </ul>
+    </section>
+
+    <section id="run">
+      <h2>Running it</h2>
+<pre><code>npm run dev                     <span class="annot"># http://localhost:5173 — try /?obs=55.86,-4.25 or /?sat=25544&amp;obs=51.5,-0.12</span>
+npm run check                   <span class="annot"># clean</span>
+npm run build                   <span class="annot"># main 725 KB (195 KB gzipped, +11), worker 26 KB (+5)</span>
+uv run --directory pipeline python -m ap_pipeline.places.build_places_from_natural_earth
+                                <span class="annot"># rebuilds the place list (one download of 4.7 MB, then 3 s)</span></code></pre>
+      <p>In the page: <strong>Above you</strong> in the top bar. Type a city, or <strong>Use my location</strong>, or <strong>Pick on the globe</strong> and click (Esc cancels), or enter coordinates. The pin appears; everything below your horizon fades while the panel is open. The chart shows the sky overhead; click a dot to select it. The pass list takes a minimum peak elevation (0/10/20/30°) and a zone toggle; click a pass to select the object and draw its track; <strong>Locate</strong> swings the camera to your spot. The object card gains a "From &lt;place&gt;" section with where it is in your sky and its next three passes.</p>
+    </section>
+
+  </article>
+</div>
